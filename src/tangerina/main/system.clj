@@ -10,4 +10,4 @@
   (edn/read-string
     (slurp
       (io/resource
-        (str "juxt/clip_example/system_" (name profile) ".edn")))))
+        (str "tangerina/main/system_" (name profile) ".edn")))))

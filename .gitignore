@@ -1,2 +1,10 @@
-.cpcache
+.cpcache/
 .nrepl-port
+.idea
+target/
+/pom*
+.clj-kondo/.cache/
+.shadow-cljs/
+package-lock.json
+package.json
+node_modules/
