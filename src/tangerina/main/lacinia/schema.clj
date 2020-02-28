@@ -1,18 +1,15 @@
 (ns tangerina.main.lacinia.schema
   (:require
    [com.walmartlabs.lacinia.schema :as schema]
-   [com.walmartlabs.lacinia.util :as util]))
+   [com.walmartlabs.lacinia.util :as util]
+   [tangerina.main.lacinia.queries :as queries]))
 
-(def hello-edn
-  '{:queries {:hello {:type    String
-                      :resolve :resolve-hello}}})
+(def lacinia-edn
+  `{:queries ~queries/queries-edn})
 
-(defn resolve-hello
-  [context args value]
-  "Hello, Clojurians!")
 
 (defn  hello-schema
   []
-  (-> hello-edn
-     (util/attach-resolvers {:resolve-hello resolve-hello})
+  (-> lacinia-edn
+     (util/attach-resolvers (merge queries/queries-resolvers-map))
      schema/compile))
