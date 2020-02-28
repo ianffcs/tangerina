@@ -28,24 +28,24 @@
    :env         env})
 
 (defn http-server
-  [env]
+  [system]
   (-> (lacinia.schema/hello-schema)
-     (service-map (lacinia-pedestal-confs (system-map env)))
+     (service-map (lacinia-pedestal-confs system))
      (update :io.pedestal.http/routes into rest/routes)
      http/create-server))
 
 (defonce state
   (atom nil))
 
-(defn start-server! [env]
-  (reset! state (http/start (http-server env))))
+(defn start-server! [system]
+  (reset! state (http/start (http-server system))))
 
 (defn stop-server! []
   (swap! state http/stop))
 
 
-#_(start-server! :dev)
+#_(start-server! (system-map :dev))
 #_(stop-server!)
 
 (defn -main []
-  (start-server! (http-server :prod)))
+  (start-server! (http-server (system-map :prod))))
