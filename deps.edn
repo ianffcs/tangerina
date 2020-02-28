@@ -10,10 +10,6 @@
          io.pedestal/pedestal.interceptor {:mvn/version "0.5.7"}
          io.pedestal/pedestal.route       {:mvn/version "0.5.7"}
 
-         ;;
-         br.com.souenzzo/eql-as {:git/url "https://github.com/souenzzo/eql-as.git"
-                                 :sha     "85815f409b149d237b542fd64f134747df71100d"}
-
          ;; lacinia
          com.walmartlabs/lacinia-pedestal {:mvn/version "0.13.0"}
          com.walmartlabs/lacinia          {:mvn/version "0.36.0"}
@@ -39,10 +35,14 @@
          reagent/reagent      {:mvn/version "0.8.1"}
          thheller/shadow-cljs {:mvn/version "2.8.83"}
 
-         ;;client
+         ;;backend client
          clj-http {:mvn/version "3.10.0"}
+         cheshire {:mvn/version "5.10.0"}
+
          ;; helpers
-         medley   {:mvn/version "1.2.0"}}
+         medley                 {:mvn/version "1.2.0"}
+         br.com.souenzzo/eql-as {:git/url "https://github.com/souenzzo/eql-as.git"
+                                 :sha     "85815f409b149d237b542fd64f134747df71100d"}}
 
  :aliases {:dev  {:extra-paths ["dev"]
                   :extra-deps  {org.clojure/tools.namespace {:mvn/version "0.3.1"}}}
