@@ -33,9 +33,9 @@
             (client/post "http://localhost:8888/graphql"
                          {:content-type :graphql
                           :body         (pg/query->graphql
-                                         `[{(createTask
-                                             {:id          666
-                                              :description "Foo"})
+                                         `[{(defineTask
+                                              {:id          666
+                                               :description "Foo"})
                                             [:description]}]
                                          {})
                           })
