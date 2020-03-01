@@ -5,12 +5,24 @@
   [context args value]
   "Hello, Clojurians!")
 
-(def queries-edn
-  '{:hello {:type    String
+(def hello-edn
+  `{:hello {:type    ~'String
             :resolve :resolve-hello}})
 
+(defn list-tasks
+  [context args value]
+  context)
+
+(def list-tasks-edn
+  `{:listTasks {:type    (~'list :Task)
+                :resolve :list-tasks}})
+
+(def queries-edn
+  (merge list-tasks-edn hello-edn))
+
 (def queries-resolvers-map
-  {:resolve-hello resolve-hello})
+  {:resolve-hello resolve-hello
+   :list-tasks    list-tasks})
 
 
 (comment (def query-schema '[^{:lacinia/tag-recursive true

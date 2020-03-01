@@ -5,10 +5,13 @@
    [tangerina.main.lacinia.queries :as queries]))
 
 (def lacinia-edn
-  `{:queries ~queries/queries-edn})
+  `{:objects {:Task {:fields {:id          {:type ~'ID}
+                              :description {:type ~'String}
+                              :completed   {:type ~'Boolean}}}}
+    :queries ~queries/queries-edn})
 
 
-(defn  hello-schema
+(defn graphql-schema
   []
   (-> lacinia-edn
      (util/attach-resolvers (merge queries/queries-resolvers-map))

@@ -29,7 +29,7 @@
 
 (defn http-server
   [system]
-  (-> (lacinia.schema/hello-schema)
+  (-> (lacinia.schema/graphql-schema)
      (service-map (lacinia-pedestal-confs system))
      (update :io.pedestal.http/routes into rest/routes)
      http/create-server))
