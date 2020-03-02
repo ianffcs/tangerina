@@ -8,7 +8,7 @@
             [tangerina.main.lacinia.schema :as lacinia.schema]))
 
 
-#_(lacinia/execute (lacinia.schema/graphql-schema) "{hello}" nil @core/state)
+#_(lacinia/execute (lacinia.schema/graphql-schema) "mutation{defineTask()}" nil @core/state)
 
 (defn http-fixture [f]
   (core/start-server! (core/system-map :dev))

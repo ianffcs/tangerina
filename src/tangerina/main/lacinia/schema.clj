@@ -9,7 +9,8 @@
 (def lacinia-edn
   `{:objects   {:Task {:fields {:id          {:type ~'ID}
                                 :description {:type ~'String}
-                                :completed   {:type ~'Boolean}}}}
+                                :completed   {:type ~'Boolean}
+                                :delete      {:type ~'Boolean}}}}
     :queries   ~queries/queries-edn
     :mutations ~mutations/mutations-edn})
 
