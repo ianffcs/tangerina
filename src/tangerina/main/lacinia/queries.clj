@@ -1,6 +1,4 @@
-(ns tangerina.main.lacinia.queries
-  (:require [datomic.api :as d]
-            [datascript.core :as ds]))
+(ns tangerina.main.lacinia.queries)
 
 (defn resolve-hello
   [context args value]
@@ -12,10 +10,12 @@
 
 (defn list-tasks
   [context args value]
-  args)
+  (prn args)
+  )
 
 (def list-tasks-edn
-  `{:listTasks {:type    (~'list :Task)
+  `{:listTasks {:args    {:id {:type ~'ID}}
+                :type    (~'list :Task)
                 :resolve ~list-tasks}})
 
 (def queries-edn

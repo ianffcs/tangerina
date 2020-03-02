@@ -1,9 +1,14 @@
 (ns tangerina.main.core-test
   (:require [tangerina.main.core :as core]
+            [com.walmartlabs.lacinia :as lacinia]
             [clj-http.client :as client]
             [com.wsscode.pathom.connect.graphql2 :as pg]
             [cheshire.core :as json]
-            [clojure.test :refer [testing is deftest use-fixtures]]))
+            [clojure.test :refer [testing is deftest use-fixtures]]
+            [tangerina.main.lacinia.schema :as lacinia.schema]))
+
+
+#_(lacinia/execute (lacinia.schema/graphql-schema) "{hello}" nil @core/state)
 
 (defn http-fixture [f]
   (core/start-server! (core/system-map :dev))
