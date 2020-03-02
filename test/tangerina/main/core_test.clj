@@ -5,10 +5,14 @@
             [com.wsscode.pathom.connect.graphql2 :as pg]
             [cheshire.core :as json]
             [clojure.test :refer [testing is deftest use-fixtures]]
-            [tangerina.main.lacinia.schema :as lacinia.schema]))
+            [tangerina.main.lacinia.schema :as lacinia.schema]
+            [tangerina.main.lacinia.mutations :as mutations]
+            [datascript.core :as ds]))
 
 
-#_(lacinia/execute (lacinia.schema/graphql-schema) "mutation{defineTask()}" nil @core/state)
+#_(lacinia/execute (lacinia.schema/graphql-schema) "mutation{defineTask(description:\"Oi\"){completed}}" nil @core/state)
+
+(mutations/find-task (ds/db (:datascript/conn @core/state)))
 
 (defn http-fixture [f]
   (core/start-server! (core/system-map :dev))
