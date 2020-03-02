@@ -58,9 +58,15 @@
                    http-server
                    (update :http/server http/start))))
 
-(defn stop-server! []
-  (swap! state #(assoc % :datascript/conn nil))
+(defn stop-datascript! []
+  (swap! state #(assoc % :datascript/conn nil)))
+
+(defn stop-http! []
   (swap! state #(update % :http/server http/stop)))
+
+(defn stop-server! []
+  (stop-datascript!)
+  (stop-http!))
 
 #_(start-server! (system-map :dev))
 #_(stop-server!)

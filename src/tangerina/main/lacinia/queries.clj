@@ -1,4 +1,5 @@
-(ns tangerina.main.lacinia.queries)
+(ns tangerina.main.lacinia.queries
+  (:require [datascript.core :as ds]))
 
 (defn resolve-hello
   [context args value]
@@ -8,15 +9,35 @@
   `{:hello {:type    ~'String
             :resolve ~resolve-hello}})
 
-(defn list-tasks
-  [context args value]
-  (prn args)
-  )
+(defn find-task
+  ([db]
+   (map (partial zipmap [:id :description :completed])
+        (ds/q '[:find ?id ?d ?c
+                :where
+                [?id :description ?d]
+                [?id :completed ?c]] db)))
+  ([db id]
+   (->> (ds/q '[:find ?id ?d ?c
+              :in $ ?id
+              :where
+              [?id :description ?d]
+              [?id :completed ?c]] db id)
+      first
+      (zipmap [:id :description :completed]))))
+
+(defn list-tasks!
+  [{:datascript/keys [conn]} args _value]
+  (let [{:keys [id]} args
+        parsed-id    (when id (read-string id))
+        db           (ds/db conn)]
+    (if id
+      [(update (find-task db parsed-id) :id str)]
+      (map #(update % :id str) (find-task db)))))
 
 (def list-tasks-edn
   `{:listTasks {:args    {:id {:type ~'ID}}
                 :type    (~'list :Task)
-                :resolve ~list-tasks}})
+                :resolve ~list-tasks!}})
 
 (def queries-edn
   (merge list-tasks-edn hello-edn))
