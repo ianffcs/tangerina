@@ -11,3 +11,5 @@
   (shadow.api/watch :todo-mvc))
 
 #_(-main)
+
+#_(server/stop-server!)

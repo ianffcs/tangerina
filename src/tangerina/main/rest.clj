@@ -15,7 +15,6 @@
    :body    idx-html
    :headers {"Content-Type" "text/html"}})
 
-
 (def routes
   #{["/greet" :get respond-hello :route-name :greet]
     ["/index" :get index :route-name :index]})

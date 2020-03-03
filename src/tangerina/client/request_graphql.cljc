@@ -11,8 +11,9 @@
             json)))
 
 (def graphql-app
-  {:url           "http://localhost:8888/graphql"
-   :method        :post
+  {:url    "http://localhost:8888/graphql"
+   :method :post
+
    ;;:content-type  :graphql
    #_#_:insecure? true})
 
@@ -24,7 +25,7 @@
                :data
                (get (get req :query-name)))
      :cljs (-> res
-               .-data
+               #_#_#_.-data
                (aget (name (get req :query-name)))
                js->clj)))
 
@@ -62,9 +63,9 @@
     (async/go
       (->> req
            http-driver
-           #_async/<!
-           #_#_#_#_#_#_#_(parserHTTPResponse req)
-           (reduce-kv #(assoc %1 (keyword %2) %3) {})
+           async/<!
+           (parserHTTPResponse req)
+           #_#_#_#_#_#_(reduce-kv #(assoc %1 (keyword %2) %3) {})
            :members
            (filter #(not= (get req-map :user-id) (get % "userId")))
            first

@@ -48,6 +48,8 @@
          (-> (lacinia.schema/graphql-schema)
             (service-map (lacinia-pedestal-confs system))
             (update :io.pedestal.http/routes into rest/routes)
+            (assoc ::http/resource-path "public"
+                   ::http/file-path "target/public")
             http/create-server)))
 
 (defonce state
@@ -67,7 +69,8 @@
 
 (defn stop-server! []
   (stop-datascript!)
-  (stop-http!))
+  (stop-http!)
+  (reset! state nil))
 
 #_(start-server! (system-map :dev))
 #_(stop-server!)
