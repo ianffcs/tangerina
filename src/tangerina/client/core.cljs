@@ -12,6 +12,12 @@
 
 (def click-count (r/atom 0))
 
+(defn insert-tasks! [description]
+  (async/go
+    (async/<! (gql/defineTask!
+                {:http-driver http/request-async}
+                {:description description}))))
+
 (defn get-all-tasks! [tasks]
   (async/go
     (let [tasks-return (async/<!
@@ -24,14 +30,9 @@
     (do
       (get-all-tasks! tasks)
       [:div "loading"])
-    [:div (sort-by (comp int second) (map #(vector :div (:id %)) @tasks))]))
-
-(defn counting-component []
-  [:div
-   "The atom " [:code "click-count"] " has value: "
-   @click-count ". "
-   [:input {:type     "button" :value "Click me!"
-            :on-click #(swap! click-count inc)}]])
+    [:div (sort-by (comp int second) (map #(vector :div (:id %)) @tasks))
+     [:input {:type         "button" :value "Click me!"
+              #_#_:on-click ( inc)}]]))
 
 (defn main
   []
