@@ -25,14 +25,14 @@
                :data
                (get (get req :query-name)))
      :cljs (-> res
-               #_#_#_.-data
+               .-data
                (aget (name (get req :query-name)))
-               js->clj)))
+               (js->clj :keywordize-keys true))))
 
 (def defineTaskResp
-  [{:defineTask [:id
-                 :description
-                 :completed]}])
+  [:id
+   :description
+   :completed])
 
 (defn query<->mutation?
   [query-name]
@@ -55,26 +55,35 @@
         (assoc :query-name (keyword query)))))
 
 (defn defineTask!
-  [{::keys [http-driver]} req-map]
+  [{:keys [http-driver]} req-map]
   (let [query "defineTask"
         req   (gqlHTTPBuilder graphql-app
-                              query defineTaskResp
-                              {:defineTask (get req-map :description)})]
+                              query defineTaskResp req-map)]
     (async/go
       (->> req
            http-driver
            async/<!
-           (parserHTTPResponse req)
-           #_#_#_#_#_#_(reduce-kv #(assoc %1 (keyword %2) %3) {})
-           :members
-           (filter #(not= (get req-map :user-id) (get % "userId")))
-           first
-           (reduce-kv #(assoc %1 (keyword %2) %3) {})
-           (into req-map)))))
+           (parserHTTPResponse req)))))
+
+(defn listTasks!
+  [{:keys [http-driver]} req-map]
+  (let [query ":listTasks"
+        req   (gqlHTTPBuilder graphql-app
+                              query defineTaskResp req-map)]
+    (async/go
+      (->> req
+           http-driver
+           async/<!
+           (parserHTTPResponse req)))))
 
 (comment defineTask! funciona igual no CLJ e no CLJS
          (async/go
            (prn (async/<! (defineTask!
-                            {::http-driver http/request-async}
+                            {:http-driver http/request-async}
                             {:description "oi"}))))
+
+         (async/go
+           (prn (async/<! (listTasks!
+                           {:http-driver http/request-async}
+                           {}))))
          )
