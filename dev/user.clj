@@ -1,8 +1,13 @@
 (ns user
-  (:require
-   [tangerina.main.system :as system]
-   [juxt.clip.repl :refer [start stop reset set-init! system]]))
+  (:require [tangerina.main.core :as server]
+            [shadow.cljs.devtools.api :as shadow.api]
+            [shadow.cljs.devtools.server :as shadow.server]))
 
-(comment (set-init! #(system/system-config :dev)))
+(defn -main
+  {:shadow/requires-server true}
+  [& _]
+  (server/start-server! (server/system-map :dev))
+  (shadow.server/start!)
+  (shadow.api/watch :todo-mvc))
 
-#_(start)
+#_(-main)

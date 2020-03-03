@@ -1,7 +1,7 @@
 {:deps     true
- :dev-http {8080 ["target/public" "classpath:public"]}
- :builds   {:ola-mundo {:target     :browser
-                        :output-dir "target/public"
-                        :asset-path "."
-                        :modules    {:main {:init-fn tangerina.client.core/main}}
-                        :devtools   {:after-load tangerina.client.core/after-load}}}}
+ :dev-http {8080 {:roots ["target/public" "classpath:public"]}}
+ :builds   {:todo-mvc {:target     :browser
+                       :output-dir "target/public"
+                       :asset-path "."
+                       :modules    {:main {:init-fn tangerina.client.core/main}}
+                       :devtools   {:after-load tangerina.client.core/after-load}}}}

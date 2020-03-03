@@ -36,23 +36,22 @@
                          {:content-type :graphql
                           :body         (pg/query->graphql
                                          `[{(defineTask
-                                              {:id          666
-                                               :description "Foo"})
+                                              {:description "Foo"})
                                             [:description]}]
                                          {})
                           })
             [:body :status])
-           {:body   "{\"data\":{\"createTask\":{\"description\":\"Foo\"}}}"
+           {:body   "{\"data\":{\"defineTask\":{\"description\":\"Foo\"}}}"
             :status 200})))
   (testing "list tasks"
     (is (= (select-keys
             (client/post "http://localhost:8888/graphql"
                          {:content-type :graphql
                           :body         (pg/query->graphql
-                                         `[{(:listTasks {:id 666})
+                                         `[{(:listTasks {:id 1})
                                             [:description]}]
                                          {})
                           })
             [:body :status])
-           {:body   "{\"data\":{\"listTasks\":{\"description\":\"Foo\"}}}"
+           {:body   "{\"data\":{\"listTasks\":[{\"description\":\"Foo\"}]}}"
             :status 200}))))

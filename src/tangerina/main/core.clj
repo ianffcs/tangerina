@@ -6,6 +6,7 @@
             [tangerina.main.rest :as rest]
             [datascript.core :as ds]))
 
+
 (defn ds-schema
   []
   {:task/description {:valueType   :string
@@ -15,7 +16,7 @@
 
 (defn system-map [env]
   (cond (= env :dev)  {:graphql/graphiql    true
-                       :graphql/ide-path    "/"
+                       :graphql/ide-path    "/graphiql/"
                        :graphql/get-enabled true
                        :graphql/env         :dev
                        :http/port           8888
