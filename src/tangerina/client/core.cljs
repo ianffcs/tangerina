@@ -10,11 +10,12 @@
 
 (def state (r/atom {:tasks :state/pending}))
 
-(defn insert-tasks! [description]
+(defn insert-tasks! [tasks description]
   (async/go
-    (async/<! (gql/defineTask!
-                {:http-driver http/request-async}
-                {:description description}))))
+    (let [inserted (async/<! (gql/defineTask!
+                               {:http-driver http/request-async}
+                               {:description description}))]
+      (swap! tasks conj inserted))))
 
 (defn complete-tasks!
   [task-cursor]
@@ -41,13 +42,17 @@
 (defn task-element
   [task-cursor]
   [:div {:key (:id @task-cursor)}
-   (if (:completed @task-cursor)
-     [:div [:strike (task-template task-cursor) [:input {:type      "checkbox"
-                                                         :value     true
-                                                         :on-change #(complete-tasks! task-cursor)}]]]
-     [:div (task-template task-cursor) [:input {:type      "checkbox"
-                                                :value     true
-                                                :on-change #(complete-tasks! task-cursor)}]])])
+   (let [checkbox (r/atom false)]
+     (if (:completed @task-cursor)
+       [:div [:strike (task-template task-cursor) [:input {:type      "checkbox"
+                                                           :value     true
+                                                           :checked   (if @checkbox "on" "off")
+                                                           :on-click  #(swap! checkbox not)
+                                                           :on-change #(complete-tasks! task-cursor)}]]]
+       [:div (task-template task-cursor) [:input {:type      "checkbox"
+                                                  :value     true
+                                                  :on-click  #(swap! checkbox not)
+                                                  :on-change #(complete-tasks! task-cursor)}]]))])
 
 (defn task-list
   [tasks]
@@ -61,7 +66,7 @@
   [tasks]
   [:div (task-list tasks)])
 
-(defn description-component []
+(defn description-component [tasks]
   (let [description (r/atom "")]
     [:div
      [:form {:action ""
@@ -74,7 +79,7 @@
                :on-change #(reset! description (.-value (.-target %)))}]
       [:input {:type     "button"
                :value    "insert task!"
-               :on-click #(insert-tasks! @description)}]]]))
+               :on-click #(insert-tasks! tasks @description)}]]]))
 
 #_(defn insert-task-button! [description]
     [:input {:type     "text"
@@ -91,7 +96,7 @@
   (r/render
    [:div
     [task-list! (r/cursor state [:tasks])]
-    [description-component]]
+    [description-component  (r/cursor state [:tasks])]]
    (.getElementById js/document "app")))
 
 (defn after-load
