@@ -11,9 +11,8 @@
             json)))
 
 (def graphql-app
-  {:url    "http://localhost:8888/graphql"
-   :method :post
-
+  {:url           "http://localhost:8888/graphql"
+   :method        :post
    ;;:content-type  :graphql
    #_#_:insecure? true})
 
