@@ -33,11 +33,19 @@
 
       (reset! tasks (vec (sort-by (comp int :id) tasks-return))))))
 
+(defn update-description
+  [task-cursor]
+  (let [description (:description @task-cursor)
+        form-state  (r/atom description)]
+    [:span {:on-click #(prn @form-state)}
+     @form-state
+     [:input {:type "text"}]]))
+
 (defn task-template
   [task-cursor]
   (prn @task-cursor)
-  [:<> "ID: " (:id @task-cursor)
-   " Description: " (:description @task-cursor)])
+  [:<> "ID: " (:id @task-cursor) " "
+   (update-description task-cursor)])
 
 (defn task-element
   [task-cursor]
@@ -64,7 +72,8 @@
 
 (defn task-list!
   [tasks]
-  [:div (task-list tasks)])
+  [:div
+   (task-list tasks)])
 
 (defn description-component [tasks]
   (let [description (r/atom "")]
