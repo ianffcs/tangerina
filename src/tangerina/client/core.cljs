@@ -36,8 +36,7 @@
   [task-cursor]
   (prn @task-cursor)
   [:<> "ID: " (:id @task-cursor)
-   " Description: " (:description @task-cursor)
-   " Completed: " (str (:completed @task-cursor))])
+   " Description: " (:description @task-cursor)])
 
 (defn task-element
   [task-cursor]
