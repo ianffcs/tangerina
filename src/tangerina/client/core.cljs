@@ -40,16 +40,14 @@
 
 (defn task-element
   [task-cursor]
-  [:div
+  [:div {:key (:id @task-cursor)}
    (if (:completed @task-cursor)
-     [:div (task-template task-cursor) [:input {:type     "checkbox"
-                                                :value    true
-                                                :on-click #(complete-tasks!
-                                                            task-cursor)}]]
-     [:div (task-template task-cursor) [:input {:type     "checkbox"
-                                                :value    true
-                                                :on-click #(complete-tasks!
-                                                            task-cursor)}]])])
+     [:div (task-template task-cursor) [:input {:type      "checkbox"
+                                                :value     "complete"
+                                                :on-change #(complete-tasks! task-cursor)}]]
+     [:div (task-template task-cursor) [:input {:type      "checkbox"
+                                                :value     ""
+                                                :on-change #(complete-tasks! task-cursor)}]])])
 
 (defn task-list
   [tasks]
