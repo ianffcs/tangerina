@@ -68,12 +68,13 @@
              :method :post
              :ref    #(swap! description str)}
       [:label {:for "insert-task"} "Description:"]
-      [:input {:id   "insert-task"
-               :type "text"
-               :name "description"}]
+      [:input {:id        "insert-task"
+               :type      "text"
+               :name      "description"
+               :on-change #(reset! description (.-value (.-target %)))}]
       [:input {:type     "button"
                :value    "insert task!"
-               :on-click #(prn @description)}]]]))
+               :on-click #(insert-tasks! @description)}]]]))
 
 #_(defn insert-task-button! [description]
     [:input {:type     "text"
