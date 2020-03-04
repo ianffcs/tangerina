@@ -36,10 +36,13 @@
 (defn update-description
   [task-cursor]
   (let [description (:description @task-cursor)
+        show-form   (r/atom false)
         form-state  (r/atom description)]
-    [:span {:on-click #(prn @form-state)}
+    (prn @show-form)
+    [:span
      @form-state
-     [:input {:type "text"}]]))
+     [:input {:type  "text"
+              :value description}]]))
 
 (defn task-template
   [task-cursor]
