@@ -1,6 +1,6 @@
 {
   "scripts": {
-      "start": "shadow-cljs watch todo-mvc"
+    "start": "shadow-cljs watch todo-mvc"
   },
   "dependencies": {
     "create-react-class": "15.6.3",
