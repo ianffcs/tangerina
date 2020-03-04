@@ -42,9 +42,9 @@
   [task-cursor]
   [:div {:key (:id @task-cursor)}
    (if (:completed @task-cursor)
-     [:div (task-template task-cursor) [:input {:type      "checkbox"
-                                                :value     true
-                                                :on-change #(complete-tasks! task-cursor)}]]
+     [:div [:strike (task-template task-cursor) [:input {:type      "checkbox"
+                                                         :value     true
+                                                         :on-change #(complete-tasks! task-cursor)}]]]
      [:div (task-template task-cursor) [:input {:type      "checkbox"
                                                 :value     true
                                                 :on-change #(complete-tasks! task-cursor)}]])])
