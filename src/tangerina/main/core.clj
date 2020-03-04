@@ -1,11 +1,9 @@
 (ns tangerina.main.core
   (:require [com.walmartlabs.lacinia.pedestal :refer [service-map]]
             [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]
             [tangerina.main.lacinia.schema :as lacinia.schema]
             [tangerina.main.rest :as rest]
             [datascript.core :as ds]))
-
 
 (defn ds-schema
   []

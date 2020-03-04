@@ -41,7 +41,6 @@
 
 (defn task-element
   [task-cursor]
-  #_(prn @task-cursor)
   [:div {:on-click #(complete-tasks! task-cursor)
          :key      (:id @task-cursor)}
    (if (:completed @task-cursor)
