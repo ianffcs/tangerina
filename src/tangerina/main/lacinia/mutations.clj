@@ -18,8 +18,9 @@
 (defn create-task
   [args]
   (-> args
-     (assoc :completed false)
-     (select-keys [:description :completed])
+     (assoc :completed false
+            :delete false)
+     (select-keys [:description :completed :delete])
      (assoc :db/id -1)))
 
 (defn update-args?
