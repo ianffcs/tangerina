@@ -31,7 +31,8 @@
 (def defineTaskResp
   [:id
    :description
-   :completed])
+   :completed
+   :delete])
 
 (defn query<->mutation?
   [query-name]
@@ -57,7 +58,7 @@
   [{:keys [http-driver]} req-map]
   (let [query "defineTask"
         req   (gqlHTTPBuilder graphql-app
-                              query defineTaskResp req-map)]
+                              query defineTaskResp (dissoc req-map :editing))]
     (async/go
       (->> req
            http-driver
