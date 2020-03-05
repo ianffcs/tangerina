@@ -17,7 +17,7 @@
                                {:description description}))]
       (swap! tasks conj inserted))))
 
-(defn complete-tasks!
+(defn complete-task!
   [task-cursor]
   (async/go
     (async/<! (gql/defineTask!
@@ -26,6 +26,25 @@
                         :completed not)))
     (swap! task-cursor update :completed not)))
 
+(defn update-task!
+  [task-cursor]
+  (let [{:keys [id description completed]} @task-cursor]
+    (async/go
+      (async/<! (gql/defineTask!
+                  {:http-driver http/request-async}
+                  {:id id :description description :completed completed}))
+      (swap! task-cursor assoc :editing false)
+      (swap! task-cursor dissoc :editing))))
+
+(defn delete-task!
+  [task-cursor]
+  (let [{:keys [id delete]} @task-cursor]
+    (async/go
+      (async/<! (gql/defineTask!
+                  {:http-driver http/request-async}
+                  {:id id :delete true}))
+      (swap! task-cursor update :delete not))))
+
 (defn get-all-tasks! [tasks]
   (async/go
     (let [tasks-return (async/<!
@@ -33,39 +52,61 @@
 
       (reset! tasks (vec (sort-by (comp int :id) tasks-return))))))
 
+(defn complete-task [task-cursor]
+  (let [checkbox (r/atom false)]
+    (if (:completed @task-cursor)
+      [:input {:type      "checkbox"
+               :value     true
+               :checked   (if (:completed @task-cursor) "on" "off")
+               :on-click  #(swap! checkbox not)
+               :on-change #(complete-task! task-cursor)}]
+      [:input {:type      "checkbox"
+               :value     true
+               :on-click  #(swap! checkbox not)
+               :on-change #(complete-task! task-cursor)}])))
+
 (defn update-description
   [task-cursor]
   (let [description (:description @task-cursor)]
     (if (:editing @task-cursor)
-      [:span [:input {:type      "text"
-                      :value     description
-                      :on-change #(swap! task-cursor assoc :description (.. % -target -value))
-                      ;;:on-keypress
-                      }]]
+      [:span [:input {:type         "text"
+                      :value        description
+                      :on-change    #(swap! task-cursor assoc :description (.. % -target -value))
+                      :on-key-press #((when (= 13 (.-charCode %))
+                                        (update-task! task-cursor)))}]]
       [:span {:on-click #(swap! task-cursor assoc :editing true)}
-       description ]
-      )))
+       description])))
+
+(defn delete-task
+  [task-cursor]
+  (let [delete (:delete @task-cursor)]
+    (if delete
+      [:span]
+      [:input {:type     "button"
+               :value    "❌"
+               :on-click #(delete-task! task-cursor)}])))
 
 (defn task-template
   [task-cursor]
-  (prn @task-cursor)
-  [:<> "ID: " (:id @task-cursor) " "
-   (update-description task-cursor)])
+  (let [delete (:delete @task-cursor)]
+    (if delete
+      [:<>]
+      [:<>
+       [:span {:class "taskCompletion"}
+        (complete-task task-cursor)]
+       [:span {:class "taskId"}
+        "ID: " (:id @task-cursor)] " "
+       [:span {:class "taskDescription"}
+        (update-description task-cursor)]
+       [:span {:class "taskDeletion"}
+        (delete-task task-cursor)]])))
 
 (defn task-element
   [task-cursor]
   [:div {:key (:id @task-cursor)}
-   (let [checkbox (r/atom false)]
-     (if (:completed @task-cursor)
-       [:div [:strike (task-template task-cursor) [:input {:type      "checkbox"
-                                                           :value     true
-                                                           :checked   (if @checkbox "on" "off")
-                                                           :on-click  #(swap! checkbox not)
-                                                           :on-change #(complete-tasks! task-cursor)}]]]
-       [:div (task-template task-cursor) [:input {:type      "checkbox"
-                                                  :value     true
-                                                  :on-click  #(swap! checkbox not)
-                                                  :on-change #(complete-tasks! task-cursor)}]]))])
+   (if (:completed @task-cursor)
+     [:div [:strike (task-template task-cursor)]]
+     [:div (task-template task-cursor)])])
 
 (defn task-list
   [tasks]
@@ -86,8 +127,8 @@
      [:form {:action ""
              :method :post
              :ref    #(swap! description str)}
-      [:label {:for "insert-task"} "Description:"]
-      [:input {:id        "insert-task"
+      [:label {:for "insertTask"} "Description:"]
+      [:input {:id        "insertTask"
                :type      "text"
                :name      "description"
                :on-change #(reset! description (.-value (.-target %)))}]
@@ -95,18 +136,8 @@
                :value    "insert task!"
                :on-click #(insert-tasks! tasks @description)}]]]))
 
-#_(defn insert-task-button! [description]
-    [:input {:type     "text"
-             :value    @description
-             :on-click #(insert-tasks! description)
-             :key      (:id @task-cursor)}
-     (if (:completed @task-cursor)
-       [:strike (task-template task-cursor)]
-       (task-template task-cursor))])
-
 (defn main
   []
-  (prn :ok)
   (r/render
    [:div
     [task-list! (r/cursor state [:tasks])]
