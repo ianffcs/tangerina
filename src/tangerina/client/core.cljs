@@ -94,9 +94,17 @@
       [:<>
        [:span {:class "taskCompletion"}
         (complete-task task-cursor)]
-       [:span {:class "taskId"}
-        "ID: " (:id @task-cursor)] " "
-       [:span {:class "taskDescription"}
+       [:span {:class "taskId"
+               :style {:background-color "rgba(120, 50, 50, 0.63)"
+                       :border-radius    "50px"
+                       :width            "30px"
+                       :display          "inline-block"
+                       :margin           "3px"
+                       :padding          "3px 2px"
+                       :text-align       "center"}}
+        (:id @task-cursor)] " "
+       [:span {:class "taskDescription"
+               :style {:margin "3px"}}
         (update-description task-cursor)]
        [:span {:class "taskDeletion"}
         (delete-task task-cursor)]])))
@@ -128,10 +136,13 @@
              :method :post
              :ref    #(swap! description str)}
       [:label {:for "insertTask"} "Description:"]
-      [:input {:id        "insertTask"
-               :type      "text"
-               :name      "description"
-               :on-change #(reset! description (.-value (.-target %)))}]
+      [:input {:id           "insertTask"
+               :type         "text"
+               :name         "description"
+               :style        {:height "2px"}
+               :on-change    #(reset! description (.-value (.-target %)))
+               :on-key-press #((when (= 13 (.-charCode %))
+                                 (insert-tasks! tasks @description)))}]
       [:input {:type     "button"
                :value    "insert task!"
                :on-click #(insert-tasks! tasks @description)}]]]))
