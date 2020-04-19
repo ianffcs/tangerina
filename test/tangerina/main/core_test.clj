@@ -55,3 +55,8 @@
             [:body :status])
            {:body   "{\"data\":{\"listTasks\":[{\"description\":\"Foo\"}]}}"
             :status 200}))))
+
+(deftest issue-01
+  ;; curl 'http://localhost:8888/graphql?query=mutation+%7B%0A++defineTask%28id%3A+%221%22%2C+description%3A+%22aaaaaaa%22%2C+completed%3A+true%2C+delete%3A+null%29+%7B%0A++++id%0A++++description%0A++++completed%0A++++delete%0A++%7D%0A%7D%0A' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0' -H 'Accept: */*' -H 'Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3' --compressed -H 'Referer: http://localhost:8888/index' -H 'Origin: http://localhost:8888' -H 'Connection: keep-alive' -H 'Cookie: org.cups.sid=e341d10ec7653ca1a95db7a3f6b95179; secret=8f50ddff-f114-4088-9b1e-46091019b638' --data ''
+  (is false)
+  )

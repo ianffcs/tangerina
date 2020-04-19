@@ -1,5 +1,6 @@
 (ns tangerina.client.core
   (:require [reagent.core :as r]
+            [reagent.dom :as dom]
             [tangerina.client.http-driver :as http]
             [tangerina.client.request-graphql :as gql]
             [clojure.core.async :as async]))
@@ -53,38 +54,74 @@
       (reset! tasks (vec (sort-by (comp int :id) tasks-return))))))
 
 (defn complete-task [task-cursor]
-  (let [checkbox (r/atom false)]
-    (if (:completed @task-cursor)
-      [:input {:type      "checkbox"
-               :value     true
-               :checked   (if (:completed @task-cursor) "on" "off")
-               :on-click  #(swap! checkbox not)
-               :on-change #(complete-task! task-cursor)}]
-      [:input {:type      "checkbox"
-               :value     true
-               :on-click  #(swap! checkbox not)
-               :on-change #(complete-task! task-cursor)}])))
+  (let [checkbox       (r/atom false)
+        completed?     (:completed @task-cursor)
+        checking       (if completed? "on" "off")
+        check-checkbox #(swap! checkbox not)
+        on-completion  #(complete-task! task-cursor)
+        input-props    {:type      "checkbox"
+                        :value     true
+                        :checked   checking
+                        :on-click  check-checkbox
+                        :on-change on-completion}]
+    (if completed?
+      [:span {:class "taskCompletion"}
+       [:input input-props]]
+      [:span {:class "taskCompletion"}
+       [:input (dissoc input-props :checked)]])))
+
+(defn ui-pre-edit-form [{::keys [description
+                                 begin-edit]}]
+  [:span {:on-click begin-edit} description])
+
+(defn ui-editing-form [{::keys [description
+                                on-edition
+                                close-edition]}]
+  [:span [:input {:type         "text"
+                  :value        description
+                  :on-change    on-edition
+                  :on-key-press close-edition}]])
 
 (defn update-description
   [task-cursor]
-  (let [description (:description @task-cursor)]
-    (if (:editing @task-cursor)
-      [:span [:input {:type         "text"
-                      :value        description
-                      :on-change    #(swap! task-cursor assoc :description (.. % -target -value))
-                      :on-key-press #((when (= 13 (.-charCode %))
-                                        (update-task! task-cursor)))}]]
-      [:span {:on-click #(swap! task-cursor assoc :editing true)}
-       description])))
+  (let [description   (:description @task-cursor)
+        editing?      (:editing @task-cursor)
+        on-edition    #(swap! task-cursor assoc :description (.. % -target -value))
+        begin-edit    #(swap! task-cursor assoc :editing true)
+        close-edition #((when (= 13 (.-charCode %))
+                          (update-task! task-cursor)))]
+    (if editing?
+      [:span {:class "taskDescription"
+              :style {:margin "3px"}}
+       [ui-editing-form {::description   description
+                         ::on-edition    on-edition
+                         ::close-edition close-edition}]]
+      [:span {:class "taskDescription"
+              :style {:margin "3px"}}
+       [ui-pre-edit-form {::description description
+                          ::begin-edit  begin-edit}]])))
 
 (defn delete-task
   [task-cursor]
-  (let [delete (:delete @task-cursor)]
+  (let [delete      (:delete @task-cursor)
+        on-deletion #(delete-task! task-cursor)]
     (if delete
-      [:span]
-      [:input {:type     "button"
-               :value    "❌"
-               :on-click #(delete-task! task-cursor)}])))
+      []
+      [:span {:class "taskDeletion"}
+       [:input {:type     "button"
+                :value    "❌"
+                :on-click on-deletion}]])))
+
+(defn ui-id [task-cursor]
+  [:span {:class "taskId"
+          :style {:background-color "rgba(120, 50, 50, 0.63)"
+                  :border-radius    "50px"
+                  :width            "30px"
+                  :display          "inline-block"
+                  :margin           "3px"
+                  :padding          "3px 2px"
+                  :text-align       "center"}}
+   (:id @task-cursor)])
 
 (defn task-template
   [task-cursor]
@@ -92,29 +129,19 @@
     (if delete
       [:<>]
       [:<>
-       [:span {:class "taskCompletion"}
-        (complete-task task-cursor)]
-       [:span {:class "taskId"
-               :style {:background-color "rgba(120, 50, 50, 0.63)"
-                       :border-radius    "50px"
-                       :width            "30px"
-                       :display          "inline-block"
-                       :margin           "3px"
-                       :padding          "3px 2px"
-                       :text-align       "center"}}
-        (:id @task-cursor)] " "
-       [:span {:class "taskDescription"
-               :style {:margin "3px"}}
-        (update-description task-cursor)]
-       [:span {:class "taskDeletion"}
-        (delete-task task-cursor)]])))
+       [complete-task task-cursor]
+       [ui-id task-cursor]       " "
+       [update-description task-cursor]
+       [delete-task task-cursor]])))
 
 (defn task-element
   [task-cursor]
-  [:div {:key (:id @task-cursor)}
-   (if (:completed @task-cursor)
-     [:div [:strike (task-template task-cursor)]]
-     [:div (task-template task-cursor)])])
+  (let [id         (:id @task-cursor)
+        completed? (:completed @task-cursor)]
+    [:div {:key id}
+     (if completed?
+       [:div [:strike (task-template task-cursor)]]
+       [:div (task-template task-cursor)])]))
 
 (defn task-list
   [tasks]
@@ -129,30 +156,40 @@
   [:div
    (task-list tasks)])
 
+(defn ui-description-component [{::keys [on-description-text
+                                         on-change
+                                         on-submit]}]
+  [:div
+   [:form {:action ""
+           :method :post
+           :ref    on-description-text}
+    [:label {:for "insertTask"} "Description:"]
+    [:input {:id        "insertTask"
+             :type      "text"
+             :name      "description"
+             :style     {:height "2px"}
+             :on-change on-change}]
+    [:input {:type     "button"
+             :value    "insert task!"
+             :on-click on-submit}]]])
+
 (defn description-component [tasks]
-  (let [description (r/atom "")]
-    [:div
-     [:form {:action ""
-             :method :post
-             :ref    #(swap! description str)}
-      [:label {:for "insertTask"} "Description:"]
-      [:input {:id           "insertTask"
-               :type         "text"
-               :name         "description"
-               :style        {:height "2px"}
-               :on-change    #(reset! description (.-value (.-target %)))
-               :on-key-press #((when (= 13 (.-charCode %))
-                                 (insert-tasks! tasks @description)))}]
-      [:input {:type     "button"
-               :value    "insert task!"
-               :on-click #(insert-tasks! tasks @description)}]]]))
+  (let [description         (r/atom "")
+        on-description-text #(swap! description str)
+        on-change           #(reset! description (.-value (.-target %)))
+        on-submit           #(insert-tasks! tasks @description)]
+    [:div [ui-description-component {::on-description-text on-description-text
+                                     ::on-change           on-change
+                                     ::on-submit           on-submit}]]))
+(defn index []
+  [:div
+   [task-list! (r/cursor state [:tasks])]
+   [description-component  (r/cursor state [:tasks])]])
 
 (defn main
   []
-  (r/render
-   [:div
-    [task-list! (r/cursor state [:tasks])]
-    [description-component  (r/cursor state [:tasks])]]
+  (dom/render
+   [index]
    (.getElementById js/document "app")))
 
 (defn after-load
