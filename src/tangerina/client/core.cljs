@@ -3,7 +3,8 @@
             [reagent.dom :as dom]
             [tangerina.client.http-driver :as http]
             [tangerina.client.request-graphql :as gql]
-            [clojure.core.async :as async]))
+            [clojure.core.async :as async]
+            [clojure.string :as string]))
 
 (comment (gql/defineTask!
            {:http-driver http/request-async}
@@ -156,35 +157,41 @@
   [:div
    (task-list tasks)])
 
-(defn ui-description-component [{::keys [on-description-text
-                                         on-change
-                                         on-submit]}]
-  [:div
-   [:form {:action ""
-           :method :post
-           :ref    on-description-text}
-    [:label {:for "insertTask"} "Description:"]
-    [:input {:id        "insertTask"
-             :type      "text"
-             :name      "description"
-             :style     {:height "2px"}
-             :on-change on-change}]
-    [:input {:type     "button"
-             :value    "insert task!"
-             :on-click on-submit}]]])
+(defn ui-description-component
+  [{::keys [on-description
+            description
+            on-submit]}]
+  [:form {:on-submit #(do
+                        (.preventDefault %)
+                        (when on-submit
+                          (on-submit %)))}
+   [:label
+    "Description:"
+    [:input {:value    description
+             :onChange #(on-description (.-value (.-target %)))}]
+    [:input {:disabled (not (fn? on-submit))
+             :type     "submit"}]]])
 
-(defn description-component [tasks]
-  (let [description         (r/atom "")
-        on-description-text #(swap! description str)
-        on-change           #(reset! description (.-value (.-target %)))
-        on-submit           #(insert-tasks! tasks @description)]
-    [:div [ui-description-component {::on-description-text on-description-text
-                                     ::on-change           on-change
-                                     ::on-submit           on-submit}]]))
-(defn index []
-  [:div
+
+(defn description-component
+  [{::keys [tasks]}]
+  (let [description (r/atom "")]
+    (fn [{::keys [tasks]}]
+      (let [current-description @description
+            on-description #(reset! description %)
+            on-submit (when-not (string/blank? current-description)
+                        #(do
+                           (insert-tasks! tasks current-description)
+                           (on-description "")))]
+        [ui-description-component {::on-description on-description
+                                   ::description    current-description
+                                   ::on-submit      on-submit}]))))
+(defn index
+  []
+  [:<>
    [task-list! (r/cursor state [:tasks])]
-   [description-component  (r/cursor state [:tasks])]])
+   [description-component {::tasks (r/cursor state [:tasks])}]])
+
 
 (defn main
   []
