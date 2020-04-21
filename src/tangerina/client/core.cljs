@@ -182,9 +182,7 @@
     [:div [ui-description-component {::on-description-text on-description-text
                                      ::on-change           on-change
                                      ::on-submit           on-submit}]]))
-(defn index []
-  [:div
-=======
+
 (defn ui-description-component
   [{::keys [on-description
             description
@@ -218,7 +216,6 @@
 (defn index
   []
   [:<>
->>>>>>> Stashed changes
    [task-list! (r/cursor state [:tasks])]
    [description-component  (r/cursor state [:tasks])]])
 
