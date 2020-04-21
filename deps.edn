@@ -2,7 +2,7 @@
  :deps  {org.clojure/clojure {:mvn/version "1.10.1"}
 
          ;; componentization
-         juxt/clip {:mvn/version "0.11.0"}
+         juxt/clip {:mvn/version "0.11.0"} ;; TODO use Enzzo components dependency summon (?)
 
          ;; web server
          io.pedestal/pedestal.service     {:mvn/version "0.5.7"}
@@ -17,19 +17,9 @@
          ;; middleware
          com.wsscode/pathom {:mvn/version "2.2.28"}
 
-         ;; hodur
-         hodur/engine            {:mvn/version "0.1.7"}
-         hodur/datomic-schema    {:mvn/version "0.1.0"}
-         hodur/lacinia-schema    {:mvn/version "0.1.2"}
-         hodur/spec-schema       {:mvn/version "0.1.5"}
-         hodur/graphviz-schema   {:mvn/version "0.1.1"}
-         hodur/visualizer-schema {:mvn/version "0.1.1"}
-         hodur/contentful-schema {:mvn/version "0.1.1"}
-
          ;; dbs
-         juxt/crux-core           {:mvn/version "19.09-1.4.0-alpha"}
-         com.datomic/datomic-free {:mvn/version "0.9.5697"}
-         datascript               {:mvn/version "0.18.10"}
+         juxt/crux-core {:mvn/version "19.09-1.4.0-alpha"}
+         datascript     {:mvn/version "0.18.10"}
 
          ;; front
          reagent/reagent      {:mvn/version "0.9.1"}

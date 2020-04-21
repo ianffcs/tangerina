@@ -156,6 +156,7 @@
   [:div
    (task-list tasks)])
 
+<<<<<<< Updated upstream
 (defn ui-description-component [{::keys [on-description-text
                                          on-change
                                          on-submit]}]
@@ -183,6 +184,41 @@
                                      ::on-submit           on-submit}]]))
 (defn index []
   [:div
+=======
+(defn ui-description-component
+  [{::keys [on-description
+            description
+            on-submit]}]
+  [:form {:on-submit #(do
+                        (.preventDefault %)
+                        (when on-submit
+                          (on-submit %)))}
+   [:label
+    "Description:"
+    [:input {:value    description
+             :onChange #(on-description (.-value (.-target %)))}]
+    [:input {:disabled (not (fn? on-submit))
+             :value    "Input Task!"
+             :type     "submit"}]]])
+
+
+(defn description-component
+  [{::keys [tasks]}]
+  (let [description (r/atom "")]
+    (fn [{::keys [tasks]}]
+      (let [current-description @description
+            on-description #(reset! description %)
+            on-submit (when-not (string/blank? current-description)
+                        #(do
+                           (insert-tasks! tasks current-description)
+                           (on-description "")))]
+        [ui-description-component {::on-description on-description
+                                   ::description    current-description
+                                   ::on-submit      on-submit}]))))
+(defn index
+  []
+  [:<>
+>>>>>>> Stashed changes
    [task-list! (r/cursor state [:tasks])]
    [description-component  (r/cursor state [:tasks])]])
 
