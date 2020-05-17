@@ -38,6 +38,16 @@
 
 (defn get-task-by-id
   [{::db/keys [conn]} id]
-  (->> (ds/q id->task (ds/db conn) id)
-     q->tasks
-     first))
+  (let [db (ds/db conn)]
+    (get-task-by-id-db db id)))
+
+(defn  get-tasks-by-ids-db
+  [db ids]
+  (->> ids
+     (map :db/id)
+     (map (partial get-task-by-id-db db))))
+
+(defn get-tasks-by-ids
+  [{::db/keys [conn]} ids]
+  (let [db (ds/db conn)]
+    (get-tasks-by-ids-db db ids)))

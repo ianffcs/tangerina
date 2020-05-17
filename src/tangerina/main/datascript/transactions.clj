@@ -1,6 +1,7 @@
 (ns tangerina.main.datascript.transactions
   (:require [datascript.core :as ds]
-            [tangerina.main.datascript.core :as db]))
+            [tangerina.main.datascript.core :as db]
+            [tangerina.main.datascript.queries :as q]))
 
 (defn create-task
   [tx-data]
@@ -13,10 +14,20 @@
   (let [tx (create-task tx-data)]
     (ds/transact! conn tx)))
 
-(defn update-args?
-  [{:keys [id delete]}]
-  (and (not (nil? id))
-     (or (false? delete) (nil? delete))))
+(defn complete-tasks-db [db tx-data]
+  (->> tx-data
+     (q/get-tasks-by-ids-db db)
+     (map #(update % :task/completed not))))
+
+(defn complete-tasks [{::db/keys [conn]} tx-data]
+  (let [db (ds/db conn)]
+    (complete-tasks-db db tx-data)))
+
+(defn complete-tasks! [{::db/keys [conn] :as sys} tx-data]
+  (->> tx-data
+     (complete-tasks sys)
+     (ds/transact! conn)))
+
 
 #_(defn update-task
     [db args]
