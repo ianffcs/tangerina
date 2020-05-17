@@ -1,6 +1,20 @@
 (ns tangerina.main.lacinia.mutations
   (:require [datascript.core :as ds]))
 
+
+(defn get-all-tasks [db]
+  (ds/q '[:find ?id ?d ?c
+          :in $
+          :where
+          [?id :description ?d]
+          [?id :completed ?c]] db))
+
+(-> tangerina.main.core/state-server
+   deref
+   :datascript/conn
+   ds/db
+   get-all-tasks)
+
 (defn find-task
   ([db id]
    (->> (ds/q '[:find ?id ?d ?c

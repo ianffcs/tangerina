@@ -5,7 +5,8 @@
             [com.walmartlabs.lacinia :as lacinia]
             [tangerina.main.lacinia.schema :as lacinia.schema]
             [tangerina.main.lacinia.mutations :as mutations]
-            [tangerina.main.core :as core])
+            [tangerina.main.core :as core]
+            [datascript.core :as ds])
   (:import (clojure.lang IPersistentMap)))
 
 (defn simplify
@@ -34,6 +35,13 @@
      gql
      variables
      context))))
+
+(deftest queries-test
+  (let [init-conn (-> :dev
+                     core/system-map
+                     core/init-db
+                     ::ds/schema
+                     )]))
 
 (deftest defineTask-test
   (let [context    (core/init-db (core/system-map :dev))
