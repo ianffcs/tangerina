@@ -1,6 +1,5 @@
 (ns tangerina.main.datascript.transactions-test
-  (:require [clojure.test :refer [testing deftest is use-fixtures]]
-            [datascript.core :as ds]
+  (:require [clojure.test :refer [testing deftest is]]
             [tangerina.main.core :as core]
             [tangerina.main.datascript.schema :as ds-schema]
             [tangerina.main.datascript.core :as db]
@@ -90,49 +89,54 @@
 
 (deftest updating-tasks
   (let [server-atom (atom nil)
-        server (core/prep-server server-atom test-system)
-        tasks [{:task/description "oi"}
-               {:task/description "ola"}
-               {:task/description "aeo"}]
-        tasks-up [{:db/id 1 :task/description "abc"}
-                  {:db/id 2 :task/description "consegui?"}]]
+        server      (core/prep-server server-atom test-system)
+        tasks       [{:task/description "oi"}
+                     {:task/description "ola"}
+                     {:task/description "aeo"}]
+        tasks-up    [{:db/id 1 :task/description "abc"}
+                     {:db/id 2 :task/description "consegui?"}]]
     (swap! server db/start-db!)
 
     (testing "not updating if not created"
       (is (nil? (tx/update-tasks @server tasks-up))))
 
     (let [create-tasks (tx/create-task! @server tasks)
-          db-tasks (get create-tasks :db-after)]
+          db-created   (get create-tasks :db-after)]
 
       (testing "pure function"
         (is (= [{:db/id 1 :task/description "abc" :task/completed false}
                 {:db/id 2 :task/description "consegui?" :task/completed false}]
-               (tx/update-task-db db-tasks tasks-up))))
+               (tx/update-tasks-db db-created tasks-up))))
 
       (testing "execution"
-        (let [updated (tx/update-tasks! @server tasks-up)
-              db-update (get updated :db-after)]
+        (let [updated    (tx/update-tasks! @server tasks-up)
+              db-updated (get updated :db-after)]
           (is (= [{:db/id 1, :task/description "abc", :task/completed false}
                   {:db/id 2, :task/description "consegui?", :task/completed false}
                   {:db/id 3, :task/description "aeo", :task/completed false}]
-                 (sort-by #(get % :db/id) (q/get-all-tasks-db db-update)))))))
+                 (sort-by #(get % :db/id) (q/get-all-tasks-db db-updated)))))))
     (swap! server db/stop-db!)))
 
-#_(deftest deleting-tasks
-    (let [server-atom (atom nil)
-          server (core/prep-server server-atom test-system)
-          tasks [{:task/description "oi"}
-                 {:task/description "ola"}
-                 {:task/description "aeo"}]
-          tasks-id (map #(assoc {} :db/id %) [1 2])]
-      (swap! server db/start-db!)
+(deftest deleting-tasks
+  (let [server-atom (atom nil)
+        server      (core/prep-server server-atom test-system)
+        tasks       [{:task/description "oi"}
+                     {:task/description "ola"}
+                     {:task/description "aeo"}]
+        tasks-id    (map #(assoc {} :db/id %) [1 2 4])]
+    (swap! server db/start-db!)
 
-      (let [create-tasks (tx/create-task! @server tasks)
-            db-tasks (get create-tasks :db-after)]
 
-        (testing "delete pure"
-          (= nil
-             (tx/delete-task db-tasks))
-          )
+    (let [create-tasks (tx/create-task! @server tasks)
+          db-tasks     (get create-tasks :db-after)]
 
-        )))
+      (testing "delete pure only if exists"
+        (is (= [[:db.fn/retractEntity 1]
+                [:db.fn/retractEntity 2]]
+               (tx/delete-tasks-db db-tasks tasks-id))))
+
+      (testing "deleting execution"
+        (let [deleted-tasks (tx/delete-tasks! @server tasks-id)
+              db-deleted    (get deleted-tasks :db-after)]
+          (is (= [{:db/id 3, :task/description "aeo", :task/completed false}]
+                 (q/get-all-tasks-db db-deleted))))))))

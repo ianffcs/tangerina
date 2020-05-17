@@ -50,40 +50,19 @@
      (update-tasks sys)
      (ds/transact! conn)))
 
+(defn delete-tasks-db
+  [db tx-data]
+  (->> tx-data
+     (q/get-tasks-by-ids-db db)
+     (remove nil?)
+     (reduce (fn [acc v]
+               (conj acc [:db.fn/retractEntity (:db/id v)])) [])))
 
-#_(defn delete-tasks
-    [db ids]
-    [[:db.fn/retractEntity i]])
+(defn delete-tasks [{::db/keys [conn]} tx-data]
+  (let [db (ds/db conn)]
+    (delete-tasks-db db tx-data)))
 
-
-(defn delete-args?
-  [{:keys [delete]}]
-  (true? delete))
-
-#_(defn delete-task
-    [db {:keys [id]}]
-    (let [parsed-id (read-string id)
-          task      (find-task db parsed-id)]
-      [:db.fn/retractEntity parsed-id]))
-
-#_(defn task-handler
-    [conn args]
-    (cond (create-args? args) (create-task args)
-          (update-args? args) (update-task (ds/db conn) args)
-          (delete-args? args) (delete-task (ds/db conn) args)))
-
-#_(defn tx-id!
-    [task tx]
-    (let [id-task (get task :db/id)
-          id-temp (-> tx :tempids first second)]
-      (if (> id-task 0)
-        (assoc task :id (str id-task))
-        (assoc task :id (str id-temp)))))
-
-#_(defn define-task!
-    [{:datascript/keys [conn]} args _value]
-    (let [task    (task-handler conn args)
-          tx-task (ds/transact! conn [task])]
-      (cond (= :db.fn/retractEntity (first task)) {:id     (str (second task))
-                                                   :delete true}
-            :else                                 (tx-id! task tx-task))))
+(defn delete-tasks! [{::db/keys [conn] :as sys} tx-data]
+  (->> tx-data
+     (delete-tasks sys)
+     (ds/transact! conn)))
