@@ -1,14 +1,19 @@
 (ns tangerina.main.http.pedestal
   (:require [io.pedestal.http :as http]
-            [com.walmartlabs.lacinia.pedestal :as lacinia-pedestal]
             [tangerina.main.lacinia.schema :as lacinia-schema]
+            [com.walmartlabs.lacinia.pedestal :as lacinia-pedestal]
             [tangerina.main.http.pedestal-routes :as routes]))
 
 (defn lacinia-pedestal-confs [system-map]
-  (let  [{::lacinia-pedestal/keys [graphiql env ide-path get-enabled]
+  (let  [{::lacinia-pedestal/keys [graphiql
+                                   env
+                                   ide-path
+                                   get-enabled]
+          ::lacinia-schema/keys   [schema]
           ::http/keys             [port]} system-map]
     {:graphiql    graphiql
      :ide-path    ide-path
+     :schema      schema
      ;;:asset-path  (default: \"/assets/graphiql\")
      :get-enabled get-enabled
      :app-context system-map
@@ -16,9 +21,9 @@
      :env         env}))
 
 (defn http-server
-  [system]
+  [{:keys [schema] :as system}]
   (assoc system ::server
-         (-> (lacinia-schema/graphql-schema)
+         (-> schema
             (lacinia-pedestal/service-map (lacinia-pedestal-confs system))
             (update ::http/routes into routes/routes)
             (assoc ::http/resource-path "public"

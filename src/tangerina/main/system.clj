@@ -1,7 +1,7 @@
 (ns tangerina.main.system
   (:require [com.walmartlabs.lacinia.pedestal :as lacinia-pedestal]
+            [tangerina.main.lacinia.schema :as lacinia-schema]
             [tangerina.main.datascript.schema :as ds-schema]
-            [tangerina.main.datascript.core :as db]
             [io.pedestal.http :as http]
             [clojure.java.io :as io]
             [clojure.edn :as edn]))
@@ -22,6 +22,7 @@
   (cond (= env ::dev)  {::lacinia-pedestal/graphiql    true
                         ::lacinia-pedestal/ide-path    "/graphiql/"
                         ::lacinia-pedestal/get-enabled true
+                        ::lacinia-schema/schema        (lacinia-schema/graphql-schema)
                         ::env                          ::dev
                         ::http/port                    8888
                         ::ds-schema/schema             (ds-schema/schema)}

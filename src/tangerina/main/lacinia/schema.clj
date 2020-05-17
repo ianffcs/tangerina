@@ -7,12 +7,11 @@
    [com.walmartlabs.lacinia :as lacinia]))
 
 (def lacinia-edn
-  `{:objects     {:Task {:fields {:id          {:type ~'ID}
-                                  :description {:type ~'String}
-                                  :completed   {:type ~'Boolean}
-                                  :delete      {:type ~'Boolean}}}}
-    #_#_:queries ~queries/queries-edn
-    #_#_         :mutations ~mutations/mutations-edn})
+  `{:objects   {:Task {:fields {:id          {:type ~'ID}
+                                :description {:type ~'String}
+                                :completed   {:type ~'Boolean}}}}
+    :queries   ~queries/queries-edn
+    :mutations ~mutations/mutations-edn})
 
 
 (defn graphql-schema

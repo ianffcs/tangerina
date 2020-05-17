@@ -2,20 +2,30 @@
   (:require [tangerina.main.datascript.queries :as q]
             [tangerina.main.datascript.transactions :as tx]))
 
-#_(-> tangerina.main.core/state-server
-      deref
-      :datascript/conn
-      ds/db
-      get-all-tasks)
+(defn ->tasks-unnamed [tasks]
+  (reduce (fn [acc {:db/keys   [id]
+                   :task/keys [description
+                               completed]}]
+            (conj acc {:db/id            id
+                       :task/description description
+                       :task/completed   completed}))
+          [] tasks))
 
+(defn create-task!
+  [system args _value]
+  (prn (-> args
+          (select-keys [:description])
+          :description))
+  (->> {:task/description (-> args
+                           (select-keys [:description])
+                           :description)}
+     #_(q/get-task-by-id system)
+     #_->tasks-unnamed))
 
-#_(def define-task-edn
-    `{:defineTask {:args    {:id          {:type ~'ID}
-                             :description {:type ~'String}
-                             :completed   {:type ~'Boolean}
-                             :delete      {:type ~'Boolean}}
-                   :type    :Task
-                   :resolve ~define-task!}})
+(def create-task-edn
+  `{:createTask {:args    {:description {:type ~'String}}
+                 :type    :Task
+                 :resolve ~create-task!}})
 
 #_(def mutations-edn
     (merge define-task-edn))
