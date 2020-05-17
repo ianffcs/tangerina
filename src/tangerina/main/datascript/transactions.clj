@@ -36,8 +36,10 @@
 (defn update-tasks-db [db tx-data]
   (let [tx-data-id (->> tx-data
                       (map #(select-keys % [:db/id])))
-        actual (q/get-tasks-by-ids-db db tx-data-id)]
-    (merge-data-fn actual tx-data)))
+        actual (->> (q/get-tasks-by-ids-db db tx-data-id)
+                  (remove nil?))]
+    (when-not (empty? actual)
+      (merge-data-fn actual tx-data))))
 
 (defn update-tasks [{::db/keys [conn]} tx-data]
   (let [db (ds/db conn)]
