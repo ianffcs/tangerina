@@ -3,7 +3,8 @@
             [reagent.dom :as dom]
             [tangerina.client.http-driver :as http]
             [tangerina.client.request-graphql :as gql]
-            [clojure.core.async :as async]))
+            [clojure.core.async :as async]
+            [clojure.string :as string]))
 
 (comment (gql/defineTask!
            {:http-driver http/request-async}
@@ -143,45 +144,22 @@
        [:div [:strike (task-template task-cursor)]]
        [:div (task-template task-cursor)])]))
 
-(defn task-list
+(defn tasks-loading? [tasks]
+  (= :state/pending @tasks))
+
+(defn ui-tasks-list
   [tasks]
-  (if (= :state/pending @tasks)
+  (if (tasks-loading? tasks)
     (do
       (get-all-tasks! tasks)
       "loading")
-    (doall (map #(task-element (r/cursor tasks [%])) (range (count @tasks))))))
+    (doall (map
+            #(task-element (r/cursor tasks [%])) (range (count @tasks))))))
 
 (defn task-list!
   [tasks]
   [:div
-   (task-list tasks)])
-
-<<<<<<< Updated upstream
-(defn ui-description-component [{::keys [on-description-text
-                                         on-change
-                                         on-submit]}]
-  [:div
-   [:form {:action ""
-           :method :post
-           :ref    on-description-text}
-    [:label {:for "insertTask"} "Description:"]
-    [:input {:id        "insertTask"
-             :type      "text"
-             :name      "description"
-             :style     {:height "2px"}
-             :on-change on-change}]
-    [:input {:type     "button"
-             :value    "insert task!"
-             :on-click on-submit}]]])
-
-(defn description-component [tasks]
-  (let [description         (r/atom "")
-        on-description-text #(swap! description str)
-        on-change           #(reset! description (.-value (.-target %)))
-        on-submit           #(insert-tasks! tasks @description)]
-    [:div [ui-description-component {::on-description-text on-description-text
-                                     ::on-change           on-change
-                                     ::on-submit           on-submit}]]))
+   (ui-tasks-list tasks)])
 
 (defn ui-description-component
   [{::keys [on-description
@@ -196,9 +174,7 @@
     [:input {:value    description
              :onChange #(on-description (.-value (.-target %)))}]
     [:input {:disabled (not (fn? on-submit))
-             :value    "Input Task!"
              :type     "submit"}]]])
-
 
 (defn description-component
   [{::keys [tasks]}]
@@ -217,10 +193,12 @@
   []
   [:<>
    [task-list! (r/cursor state [:tasks])]
-   [description-component  (r/cursor state [:tasks])]])
+   [description-component (r/cursor state [:tasks])]])
+
 
 (defn main
   []
+  (.log js/console (prn (r/cursor state [:tasks])))
   (dom/render
    [index]
    (.getElementById js/document "app")))
