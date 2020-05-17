@@ -28,22 +28,25 @@
      (complete-tasks sys)
      (ds/transact! conn)))
 
-(defn update-task-db [db tx-data]
-  (let [actual (q/get-tasks-by-ids-db db tx-data)]
-    (map #(merge tx-data)
+(defn merge-data-fn [before after]
+  (distinct (for [b (sort-by :db/id before)
+                  a (sort-by :db/id after)]
+              (merge b a))))
 
-         )))
+(defn update-tasks-db [db tx-data]
+  (let [tx-data-id (->> tx-data
+                      (map #(select-keys % [:db/id])))
+        actual (q/get-tasks-by-ids-db db tx-data-id)]
+    (merge-data-fn actual tx-data)))
 
+(defn update-tasks [{::db/keys [conn]} tx-data]
+  (let [db (ds/db conn)]
+    (update-tasks-db db tx-data)))
 
-#_(defn update-task
-    [db args]
-    (let [{:keys [id]}  args
-          parsed-id (read-string id)
-          task      (find-task db parsed-id)]
-      (when (not-empty task)
-        (assoc (merge task
-                      (assoc args :id parsed-id))
-               :db/id parsed-id))))
+(defn update-tasks! [{::db/keys [conn] :as sys} tx-data]
+  (->> tx-data
+     (update-tasks sys)
+     (ds/transact! conn)))
 
 (defn delete-args?
   [{:keys [delete]}]

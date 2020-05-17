@@ -14,9 +14,6 @@
          (tx/create-task
           [{:task/description "oi"}]))))
 
-(def test-server
-  (atom nil))
-
 (def test-system
   {::ds-schema/schema (ds-schema/schema)})
 
@@ -47,19 +44,21 @@
         server (core/prep-server server-atom test-system)
         tasks [{:task/description "oi"}
                {:task/description "ola"}
-               {:task/description "kct"}]
-        create-tasks (tx/create-task! @test-server tasks)
-        db-tasks (get create-tasks :db-after)]
+               {:task/description "kct"}]]
+
     (swap! server db/start-db!)
 
-    (is (= 3 (count (q/get-all-tasks @test-server))))
-    (is (= [{:db/id 1, :task/description "oi", :task/completed false}
-            {:db/id 2, :task/description "ola", :task/completed false}
-            {:db/id 3, :task/description "kct", :task/completed false}]
-           (q/get-tasks-by-ids @test-server (map
-                                             #(assoc {} :db/id %)
-                                             [1 2 3]))
-           (sort-by :db/id (q/get-all-tasks-db db-tasks))))
+    (let [create-tasks (tx/create-task! @server tasks)
+          db-tasks (get create-tasks :db-after)]
+
+      (is (= 3 (count (q/get-all-tasks @server))))
+      (is (= [{:db/id 1, :task/description "oi", :task/completed false}
+              {:db/id 2, :task/description "ola", :task/completed false}
+              {:db/id 3, :task/description "kct", :task/completed false}]
+             (q/get-tasks-by-ids @server (map
+                                          #(assoc {} :db/id %)
+                                          [1 2 3]))
+             (sort-by :db/id (q/get-all-tasks-db db-tasks)))))
 
     (swap! server db/stop-db!)))
 
@@ -69,22 +68,23 @@
         tasks [{:task/description "oi"}
                {:task/description "ola"}
                {:task/description "kct"}]
-        create-tasks (tx/create-task! @test-server tasks)
-        db-tasks (get create-tasks :db-after)
         tasks-id (map #(assoc {} :db/id %) [1 2 3])]
     (swap! server db/start-db!)
 
-    (testing "pure function"
-      (is (= [{:db/id 1, :task/description "oi", :task/completed true}
-              {:db/id 2, :task/description "ola", :task/completed true}
-              {:db/id 3, :task/description "kct", :task/completed true}]
-             (tx/complete-tasks-db db-tasks tasks-id))))
+    (let [create-tasks (tx/create-task! @server tasks)
+          db-tasks (get create-tasks :db-after)]
 
-    (testing "execution"
-      (let [completed (tx/complete-tasks! @test-server tasks-id)
-            db-completed (get completed :db-after)]
-        (is (every? true? (map :task/completed
-                               (q/get-all-tasks-db db-completed))))))
+      (testing "pure function"
+        (is (= [{:db/id 1, :task/description "oi", :task/completed true}
+                {:db/id 2, :task/description "ola", :task/completed true}
+                {:db/id 3, :task/description "kct", :task/completed true}]
+               (tx/complete-tasks-db db-tasks tasks-id))))
+
+      (testing "execution"
+        (let [completed (tx/complete-tasks! @server tasks-id)
+              db-completed (get completed :db-after)]
+          (is (every? true? (map :task/completed
+                                 (q/get-all-tasks-db db-completed)))))))
 
     (swap! server db/stop-db!)))
 
@@ -94,18 +94,24 @@
         tasks [{:task/description "oi"}
                {:task/description "ola"}
                {:task/description "kct"}]
-        create-tasks (tx/create-task! @test-server tasks)
-        db-tasks (get create-tasks :db-after)
-        tasks-up [{:db/id 1 :task/description "abc"}]]
+        tasks-up [{:db/id 1 :task/description "abc"}
+                  {:db/id 2 :task/description "consegui?"}]]
     (swap! server db/start-db!)
 
-    (testing "pure function"
-      (is (= nil
-             (tx/update-task-db db-tasks tasks-up))))
+    (let [create-tasks (tx/create-task! @server tasks)
+          db-tasks (get create-tasks :db-after)]
 
-    #_(testing "execution"
-        (let [completed (tx/complete-tasks! @test-server tasks-id)
-              db-completed (get completed :db-after)]
-          (is (every? true? (map :task/completed
-                                 (q/get-all-tasks-db db-completed))))))
+      (testing "pure function"
+        (is (= [{:db/id 1 :task/description "abc" :task/completed false}
+                {:db/id 2 :task/description "consegui?" :task/completed false}]
+               (tx/update-task-db db-tasks tasks-up))))
+
+      (testing "execution"
+        (let [updated (tx/update-tasks! @server tasks-up)
+              db-update (get updated :db-after)]
+          (is (= [{:db/id 1, :task/description "abc", :task/completed false}
+                  {:db/id 2, :task/description "consegui?", :task/completed false}
+                  {:db/id 3, :task/description "kct", :task/completed false}]
+                 (sort-by #(get % :db/id) (q/get-all-tasks-db db-update)))))))
+
     (swap! server db/stop-db!)))
