@@ -50,6 +50,12 @@
      (update-tasks sys)
      (ds/transact! conn)))
 
+
+#_(defn delete-tasks
+    [db ids]
+    [[:db.fn/retractEntity i]])
+
+
 (defn delete-args?
   [{:keys [delete]}]
   (true? delete))

@@ -116,7 +116,6 @@
                   {:db/id 2, :task/description "consegui?", :task/completed false}
                   {:db/id 3, :task/description "aeo", :task/completed false}]
                  (sort-by #(get % :db/id) (q/get-all-tasks-db db-update)))))))
-
     (swap! server db/stop-db!)))
 
 #_(deftest deleting-tasks
@@ -124,7 +123,8 @@
           server (core/prep-server server-atom test-system)
           tasks [{:task/description "oi"}
                  {:task/description "ola"}
-                 {:task/description "aeo"}]]
+                 {:task/description "aeo"}]
+          tasks-id (map #(assoc {} :db/id %) [1 2])]
       (swap! server db/start-db!)
 
       (let [create-tasks (tx/create-task! @server tasks)
@@ -132,7 +132,7 @@
 
         (testing "delete pure"
           (= nil
-             (tx/delete-task))
+             (tx/delete-task db-tasks))
           )
 
         )))
