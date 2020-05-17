@@ -4,5 +4,5 @@
   []
   {:task/description {:valueType   :string
                       :cardinality :one}
-   :task/completion  {:valueType   :boolean
+   :task/completed   {:valueType   :boolean
                       :cardinality :one}})

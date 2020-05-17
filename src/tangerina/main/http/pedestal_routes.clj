@@ -1,4 +1,4 @@
-(ns tangerina.main.rest
+(ns tangerina.main.http.pedestal-routes
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :as interceptor]

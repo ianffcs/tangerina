@@ -2,7 +2,7 @@
   (:require [io.pedestal.http :as http]
             [com.walmartlabs.lacinia.pedestal :as lacinia-pedestal]
             [tangerina.main.lacinia.schema :as lacinia-schema]
-            [tangerina.main.rest :as routes]))
+            [tangerina.main.http.pedestal-routes :as routes]))
 
 (defn lacinia-pedestal-confs [system-map]
   (let  [{::lacinia-pedestal/keys [graphiql env ide-path get-enabled]

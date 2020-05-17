@@ -7,8 +7,8 @@
 (defonce server
   (atom nil))
 
-(defn prep-server [env]
-  (reset! server (system/system-map env))
+(defn prep-server [server system]
+  (reset! server system)
   server)
 
 (defn start-server! [server]
@@ -20,10 +20,14 @@
   (swap! server db/stop-db!))
 
 (defn -main [env]
-  (-> env
-     prep-server
+  (->> env
+     system/system-map
+     (prep-server server)
      start-server!))
 
-#_#_#_server
+#_ (->> ::system/dev
+        system/system-map
+        (prep-server server))
+#_#_#_ (prn @server)
 (start-server! server)
 (stop-server! server)
