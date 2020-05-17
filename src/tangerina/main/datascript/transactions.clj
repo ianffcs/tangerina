@@ -28,6 +28,12 @@
      (complete-tasks sys)
      (ds/transact! conn)))
 
+(defn update-task-db [db tx-data]
+  (let [actual (q/get-tasks-by-ids-db db tx-data)]
+    (map #(merge tx-data)
+
+         )))
+
 
 #_(defn update-task
     [db args]

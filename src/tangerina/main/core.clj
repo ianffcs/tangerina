@@ -27,7 +27,7 @@
 
 #_ (->> ::system/dev
         system/system-map
-        (prep-server server))
+        #_(prep-server server))
 #_#_#_ (prn @server)
 (start-server! server)
 (stop-server! server)
