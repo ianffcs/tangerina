@@ -22,10 +22,7 @@
      #_(q/get-task-by-id system)
      #_->tasks-unnamed))
 
-(def create-task-edn
+(def mutations-edn
   `{:createTask {:args    {:description {:type ~'String}}
                  :type    :Task
                  :resolve ~create-task!}})
-
-#_(def mutations-edn
-    (merge define-task-edn))
