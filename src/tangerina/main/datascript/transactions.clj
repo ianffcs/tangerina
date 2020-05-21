@@ -9,15 +9,17 @@
 
 (defn complete-tasks [tx-data]
   (->> tx-data
+     (remove nil?)
      (map #(assoc % :task/completed true))))
 
 (defn uncomplete-tasks [tx-data]
   (->> tx-data
+     (remove nil?)
      (map #(assoc % :task/completed false))))
 
 (defn update-tasks
   [tx-data-actual tx-data-after]
-  (when-not (empty? tx-data-actual)
+  (when-not (and (empty? tx-data-after) (empty? tx-data-actual))
     (distinct (for [ac (->> tx-data-actual
                           (remove nil?)
                           (sort-by :db/id))

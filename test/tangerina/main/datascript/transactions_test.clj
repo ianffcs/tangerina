@@ -17,15 +17,14 @@
   (let [task-1 [{:task/description "oi"}
                 {:task/description "ae"}
                 {:task/description "aio"}]]
-    (testing "creation"
-      (is (= [] (tx/create-task [])))
-      (is (match? [{:task/description "oi"
-                    :task/completed   false}
-                   {:task/description "ae"
-                    :task/completed   false}
-                   {:task/description "aio"
-                    :task/completed   false}]
-                  (tx/create-task task-1))))))
+    (is (match? empty? (tx/create-task [])))
+    (is (match? [{:task/description "oi"
+                  :task/completed   false}
+                 {:task/description "ae"
+                  :task/completed   false}
+                 {:task/description "aio"
+                  :task/completed   false}]
+                (tx/create-task task-1)))))
 
 (deftest completion-tx-data
   (let [to-complete     [{:task/description "ae"
@@ -40,27 +39,28 @@
                          {:task/description "aio"
                           :task/completed   true
                           :db/id            2}]]
-    (testing "completion"
-      (is (match? completed-tasks
-                  (tx/complete-tasks to-complete))))))
+    (is (match? empty? (tx/complete-tasks [])))
+    (is (match? completed-tasks
+                (tx/complete-tasks to-complete)))))
 
 (deftest un-completion-tx-data
   (let [to-uncomplete [{:task/description "aio"
                         :task/completed   true
                         :db/id            2}]]
-
-    (testing "uncompletion"
-      (is (match? [{:task/description "aio"
-                    :task/completed   false
-                    :db/id            2}]
-                  (tx/uncomplete-tasks to-uncomplete))))))
+    (is (match? empty? (tx/uncomplete-tasks [])))
+    (is (match? [{:task/description "aio"
+                  :task/completed   false
+                  :db/id            2}]
+                (tx/uncomplete-tasks to-uncomplete)))))
 
 (deftest update-tx-data
   (let [actual [{:db/id 1, :task/description "oi", :task/completed false}
                 {:db/id 2 :task/description "ola" :task/completed false}]
         after  [{:db/id 1, :task/description "abc"}]
         result [{:db/id 1 :task/description "abc" :task/completed false}]]
-
+    (is (match? empty? (tx/update-tasks [] [])))
+    (is (match? empty? (tx/update-tasks actual [])))
+    (is (match? empty? (tx/update-tasks [] after)))
     (is (match? result (tx/update-tasks actual after)))))
 
 (deftest delete-tasks
@@ -68,6 +68,9 @@
                  {:db/id 2}
                  {:db/id 3}]
         data-db [{:db/id 1 :task/description "abc" :task/completed false}]]
+    (is (match? empty? (tx/delete-tasks [] [])))
+    (is (match? empty? (tx/delete-tasks [] data-db)))
+    (is (match? empty? (tx/delete-tasks tx-data [])))
     (is (match? [[:db.fn/retractEntity 1]
                  [:db.fn/retractEntity 2]
                  [:db.fn/retractEntity 3]]
