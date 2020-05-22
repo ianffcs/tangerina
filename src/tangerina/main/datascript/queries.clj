@@ -17,11 +17,13 @@
 
 (defn get-all-tasks-db [db]
   (->> (ds/q all-tasks db)
-     q->tasks))
+     q->tasks
+     (sort-by :db/id)))
 
 (defn get-all-tasks [{::db/keys [conn]}]
   (->> (ds/q all-tasks (ds/db conn))
-     q->tasks))
+     q->tasks
+     (sort-by :db/id)))
 
 (def id->task
   '[:find ?id ?d ?c
@@ -42,10 +44,20 @@
     (get-task-by-id-db db id)))
 
 (defn  get-tasks-by-ids-db
-  [db ids]
-  (->> ids
+  [db ids-data]
+  (->> ids-data
+     (sort-by :db/id)
      (map :db/id)
+     (remove nil?)
      (map (partial get-task-by-id-db db))))
+
+(comment
+  ;;TODO test!
+  ;;(is
+  ;; (empty? (q/get-tasks-by-ids-db
+  ;;          (ds/db conn)
+  ;;          [{:db/id nil}])))
+  )
 
 (defn get-tasks-by-ids
   [{::db/keys [conn]} ids]

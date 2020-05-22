@@ -3,7 +3,6 @@
                                   use-fixtures]]
             [matcher-combinators.test :refer [match?]]
             [tangerina.main.test-utils :as tu]
-            [tangerina.main.core :as core]
             [tangerina.main.datascript.schema :as ds-schema]
             [tangerina.main.datascript.core :as db]
             [tangerina.main.datascript.queries :as q]
@@ -17,14 +16,14 @@
   (let [task-1 [{:task/description "oi"}
                 {:task/description "ae"}
                 {:task/description "aio"}]]
-    (is (match? empty? (tx/create-task [])))
+    (is (match? empty? (tx/create-tasks [])))
     (is (match? [{:task/description "oi"
                   :task/completed   false}
                  {:task/description "ae"
                   :task/completed   false}
                  {:task/description "aio"
                   :task/completed   false}]
-                (tx/create-task task-1)))))
+                (tx/create-tasks task-1)))))
 
 (deftest completion-tx-data
   (let [to-complete     [{:task/description "ae"
@@ -54,10 +53,20 @@
                 (tx/uncomplete-tasks to-uncomplete)))))
 
 (deftest update-tx-data
-  (let [actual [{:db/id 1, :task/description "oi", :task/completed false}
-                {:db/id 2 :task/description "ola" :task/completed false}]
-        after  [{:db/id 1, :task/description "abc"}]
-        result [{:db/id 1 :task/description "abc" :task/completed false}]]
+  (let [actual [{:db/id            2,
+                 :task/description "ola",
+                 :task/completed   true}
+                {:db/id            3,
+                 :task/description "aio",
+                 :task/completed   false}]
+        after  [{:db/id 2, :task/description "alo"}
+                {:db/id 3, :task/description "ioa"}]
+        result [{:db/id            2,
+                 :task/description "alo",
+                 :task/completed   true}
+                {:db/id            3
+                 :task/description "ioa"
+                 :task/completed   false}]]
     (is (match? empty? (tx/update-tasks [] [])))
     (is (match? empty? (tx/update-tasks actual [])))
     (is (match? empty? (tx/update-tasks [] after)))
@@ -78,120 +87,93 @@
 
 (use-fixtures :once (partial tu/setup-teardown-db test-system))
 
-
 ;; TODO transactions-test
-#_(deftest transactions-task-test
-(let [task-1             [{:task/description "oi"}]
-      {::db/keys [conn]} @tu/test-server
-      {db-1 :db-after}   (->> task-1
-                              tx/create-task
-                              (ds/transact! conn))
-      created-1          {:db/id            1
-                          :task/description "oi"
-                          :task/completed   false}]
+(deftest transactions-task-test
+  (let [{::db/keys [conn]} @tu/test-server]
+    (testing "creation"
+      (let [tasks                  [{:task/description "oi"}
+                                    {:task/description "ola"}
+                                    {:task/description "aio"}]
+            {db-created :db-after} (->> tasks
+                                      tx/create-tasks
+                                      (ds/transact! conn))
+            created                [{:db/id            1
+                                     :task/description "oi"
+                                     :task/completed   false}
+                                    {:db/id            2
+                                     :task/description "ola"
+                                     :task/completed   false}
+                                    {:db/id            3
+                                     :task/description "aio"
+                                     :task/completed   false}]]
+        (is (match? created
+                    (q/get-tasks-by-ids-db db-created [{:db/id 1}
+                                                       {:db/id 2}
+                                                       {:db/id 3}])))
+        (is (match? created  (q/get-all-tasks-db db-created)))))
 
-  (testing "transaction"
-    (is (= created-1 (q/get-task-by-id-db db-1 1))))))
+    (testing "completion"
+      (let [completion               [{:db/id 2}
+                                      {:db/id 3}]
+            {db-completed :db-after} (->> completion
+                                        tx/complete-tasks
+                                        (ds/transact! conn))
+            completed                [{:db/id            1,
+                                       :task/description "oi",
+                                       :task/completed   false}
+                                      {:db/id            2,
+                                       :task/description "ola",
+                                       :task/completed   true}
+                                      {:db/id            3,
+                                       :task/description "aio",
+                                       :task/completed   true}]]
+        (is (match? completed (q/get-all-tasks-db db-completed)))))
 
-#_(deftest get-tasks-by-ids-test
-(let [server-atom (atom nil)
-      server      (core/prep-server server-atom test-system)
-      tasks       [{:task/description "oi"}
-                   {:task/description "ola"}
-                   {:task/description "aeo"}]]
+    (testing "uncompletion"
+      (let [uncompletion               [{:db/id 1}
+                                        {:db/id 3}]
+            {db-uncompleted :db-after} (->> uncompletion
+                                          tx/uncomplete-tasks
+                                          (ds/transact! conn))
+            uncompleted                [{:db/id            1,
+                                         :task/description "oi",
+                                         :task/completed   false}
+                                        {:db/id            2,
+                                         :task/description "ola",
+                                         :task/completed   true}
+                                        {:db/id            3,
+                                         :task/description "aio",
+                                         :task/completed   false}]]
+        (is (match? uncompleted (q/get-all-tasks-db db-uncompleted)))))
 
-  (swap! server db/start-db!)
+    (testing "updating"
+      (let [updating-data          [{:db/id 2 :task/description "alo"}
+                                    {:db/id 3 :task/description "ioa"}]
+            actual-data            (q/get-tasks-by-ids-db
+                                    (ds/db conn)
+                                    updating-data)
+            {db-updated :db-after} (->> updating-data
+                                      (tx/update-tasks actual-data)
+                                      (ds/transact! conn))
+            updated-data           [{:db/id            1,
+                                     :task/description "oi",
+                                     :task/completed   false}
+                                    {:db/id            2,
+                                     :task/description "alo",
+                                     :task/completed   true}
+                                    {:db/id            3,
+                                     :task/description "ioa",
+                                     :task/completed   false}]]
+        (is (match? updated-data (q/get-all-tasks-db db-updated)))))
 
-  (let [create-tasks (tx/create-task! @server tasks)
-        db-tasks     (get create-tasks :db-after)]
-
-    (is (= 3 (count (q/get-all-tasks @server))))
-    (is (= [{:db/id 1, :task/description "oi", :task/completed false}
-            {:db/id 2, :task/description "ola", :task/completed false}
-            {:db/id 3, :task/description "aeo", :task/completed false}]
-           (q/get-tasks-by-ids @server (map
-                                        #(assoc {} :db/id %)
-                                        [1 2 3]))
-           (sort-by :db/id (q/get-all-tasks-db db-tasks)))))
-
-  (swap! server db/stop-db!)))
-
-#_(deftest completing-tasks
-(let [server-atom (atom nil)
-      server      (core/prep-server server-atom test-system)
-      tasks       [{:task/description "oi"}
-                   {:task/description "ola"}
-                   {:task/description "aeo"}]
-      tasks-id    (map #(assoc {} :db/id %) [1 2 3])]
-  (swap! server db/start-db!)
-
-  (let [create-tasks (tx/create-task! @server tasks)
-        db-tasks     (get create-tasks :db-after)]
-
-    (testing "pure function"
-      (is (= [{:db/id 1, :task/description "oi", :task/completed true}
-              {:db/id 2, :task/description "ola", :task/completed true}
-              {:db/id 3, :task/description "aeo", :task/completed true}]
-             (tx/complete-tasks-db db-tasks tasks-id))))
-
-    (testing "execution"
-      (let [completed    (tx/complete-tasks! @server tasks-id)
-            db-completed (get completed :db-after)]
-        (is (every? true? (map :task/completed
-                               (q/get-all-tasks-db db-completed)))))))
-
-  (swap! server db/stop-db!)))
-
-#_(deftest updating-tasks
-    (let [server-atom (atom nil)
-          server      (core/prep-server server-atom test-system)
-          tasks       [{:task/description "oi"}
-                       {:task/description "ola"}
-                       {:task/description "aeo"}]
-          tasks-up    [{:db/id 1 :task/description "abc"}
-                       {:db/id 2 :task/description "consegui?"}]]
-      (swap! server db/start-db!)
-
-      (testing "not updating if not created"
-        (is (nil? (tx/update-tasks @server tasks-up))))
-
-      (let [create-tasks (tx/create-task! @server tasks)
-            db-created   (get create-tasks :db-after)]
-
-        (testing "pure function"
-          (is (= [{:db/id 1 :task/description "abc" :task/completed false}
-                  {:db/id 2 :task/description "consegui?" :task/completed false}]
-                 (tx/update-tasks-db db-created tasks-up))))
-
-        (testing "execution"
-          (let [updated    (tx/update-tasks! @server tasks-up)
-                db-updated (get updated :db-after)]
-            (is (= [{:db/id 1, :task/description "abc", :task/completed false}
-                    {:db/id 2, :task/description "consegui?", :task/completed false}
-                    {:db/id 3, :task/description "aeo", :task/completed false}]
-                   (sort-by #(get % :db/id) (q/get-all-tasks-db db-updated)))))))
-      (swap! server db/stop-db!)))
-
-#_(deftest deleting-tasks
-    (let [server-atom (atom nil)
-          server      (core/prep-server server-atom test-system)
-          tasks       [{:task/description "oi"}
-                       {:task/description "ola"}
-                       {:task/description "aeo"}]
-          tasks-id    (map #(assoc {} :db/id %) [1 2 4])]
-      (swap! server db/start-db!)
-
-
-      (let [create-tasks (tx/create-task! @server tasks)
-            db-tasks     (get create-tasks :db-after)]
-
-        (testing "delete pure only if exists"
-          (is (= [[:db.fn/retractEntity 1]
-                  [:db.fn/retractEntity 2]]
-                 (tx/delete-tasks-db db-tasks tasks-id))))
-
-        (testing "deleting execution"
-          (let [deleted-tasks (tx/delete-tasks! @server tasks-id)
-                db-deleted    (get deleted-tasks :db-after)]
-            (is (= [{:db/id 3, :task/description "aeo", :task/completed false}]
-                   (q/get-all-tasks-db db-deleted))))))))
+    (testing "deletion"
+      (let [deletion-data          [{:db/id 1}
+                                    {:db/id 3}]
+            actual-data            (q/get-tasks-by-ids-db
+                                    (ds/db conn)
+                                    deletion-data)
+            {db-deleted :db-after} (->> deletion-data
+                                      (tx/delete-tasks actual-data)
+                                      (ds/transact! conn))
+            after-deletion         [{:db/id 2, :task/description "alo", :task/completed true}]]
+        (is (match? after-deletion (q/get-all-tasks-db db-deleted)))))))

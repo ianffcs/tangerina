@@ -17,14 +17,19 @@
      (remove nil?)
      (map #(assoc % :task/completed false))))
 
-(defn update-tasks
+(defn update-task
   [tx-data-actual tx-data-after]
-  (when-not (and (empty? tx-data-after) (empty? tx-data-actual))
-    (distinct (for [ac (->> tx-data-actual
-                          (remove nil?)
-                          (sort-by :db/id))
-                    af (sort-by :db/id tx-data-after)]
-                (merge ac af)))))
+  (when (= (get tx-data-actual :db/id)
+           (get tx-data-after :db/id))
+    (assoc tx-data-actual
+           :task/description (get tx-data-after :task/description))))
+
+(defn update-tasks
+  [txs-data-actual txs-data-after]
+  (->> (update-task ac af)
+     (for [ac txs-data-actual
+           af txs-data-after])
+     (remove nil?)))
 
 (defn delete-tasks
   [tx-data data-db]
