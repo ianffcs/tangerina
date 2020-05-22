@@ -177,3 +177,30 @@
                                       (ds/transact! conn))
             after-deletion         [{:db/id 2, :task/description "alo", :task/completed true}]]
         (is (match? after-deletion (q/get-all-tasks-db db-deleted)))))))
+
+
+
+(deftest crud-test
+  (let [conn (doto (ds/create-conn))
+        {:keys [db-after tempids]} (ds/transact! conn
+                                                 [;; manualmenete criando um cenário
+                                                  {:db/id            -1
+                                                   :task/description "abc"
+                                                   :task/completed   true}])
+        id-do-abc (ds/resolve-tempid db-after tempids -1)
+        {db-uncomplete-task :db-after} (ds/transact! conn (tx/uncomplete-task id-do-abc))
+        {db-create-task :db-after} (ds/transact! conn (tx/create-task "ian"))]
+    (testing
+      "Devo encontrar a task abc com completed igual a false"
+      (is (= [{:db/id            1
+               :task/completed   false
+               :task/description "abc"}]
+             (q/tasks db-uncomplete-task))))
+    (testing
+      "A task ian deve ser criada e aparecer em all-tasks"
+      (is (= [{:db/id            2
+               :task/description "ian"}
+              {:db/id            1
+               :task/completed   false
+               :task/description "abc"}]
+             (q/tasks db-create-task))))))

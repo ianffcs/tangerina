@@ -4,8 +4,8 @@
 
 (defn q->tasks [q]
   (reduce (fn [acc [id d c]] (conj acc {:db/id id
-                                       :task/description d
-                                       :task/completed c}))
+                                        :task/description d
+                                        :task/completed c}))
           [] q))
 
 (def all-tasks
@@ -14,6 +14,13 @@
     :where
     [?id :task/description ?d]
     [?id :task/completed ?c]])
+
+(defn tasks
+  [db]
+  (ds/q '[:find [(pull ?e [*]) ...]
+          :where
+          [?e :task/description]]
+        db))
 
 (defn get-all-tasks-db [db]
   (->> (ds/q all-tasks db)
@@ -51,13 +58,13 @@
      (remove nil?)
      (map (partial get-task-by-id-db db))))
 
-(comment
+(comment)
   ;;TODO test!
   ;;(is
   ;; (empty? (q/get-tasks-by-ids-db
   ;;          (ds/db conn)
   ;;          [{:db/id nil}])))
-  )
+
 
 (defn get-tasks-by-ids
   [{::db/keys [conn]} ids]

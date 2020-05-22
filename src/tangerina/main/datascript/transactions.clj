@@ -1,4 +1,5 @@
-(ns tangerina.main.datascript.transactions)
+(ns tangerina.main.datascript.transactions
+  (:require [datascript.core :as ds]))
 
 (defn create-tasks
   [tx-data]
@@ -38,3 +39,11 @@
        (remove nil?)
        (reduce (fn [acc v]
                  (conj acc [:db.fn/retractEntity (:db/id v)])) []))))
+
+(defn uncomplete-task
+  [id]
+  [[:db/add id :task/completed false]])
+
+(defn create-task
+  [description]
+  [[:db/add (ds/tempid :db.part/user) :task/description description]])
