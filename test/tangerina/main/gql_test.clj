@@ -3,7 +3,7 @@
             [io.pedestal.http :as http]
             [io.pedestal.test :refer [response-for]]
             [datascript.core :as ds]
-            [com.walmartlabs.lacinia :as lacinia]
+            [clj-kondo.core :as kondo]
             [com.walmartlabs.lacinia.pedestal2 :as lp]
             [clojure.data.json :as json]
             [com.walmartlabs.lacinia.schema :as lacinia.schema]
@@ -118,3 +118,6 @@
     (is (= {:data {:tasks [{:checked     false
                             :description "world"}]}}
            (gql env `[{:tasks [:description :checked]}])))))
+
+(deftest code-quality
+  (is (empty? (:findings (kondo/run! {})))))

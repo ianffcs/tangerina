@@ -52,6 +52,7 @@
 
            :test {:extra-paths ["test" "resources"]
                   :extra-deps  {org.clojure/test.check        {:mvn/version "0.9.0"}
+                                clj-kondo/clj-kondo           {:mvn/version "2020.05.09"}
                                 lambdaisland/kaocha           {:mvn/version "1.0.632"}
                                 lambdaisland/kaocha-cloverage {:mvn/version "1.0-45"}
                                 lambdaisland/kaocha-cljs      {:mvn/version "0.0-71"}
