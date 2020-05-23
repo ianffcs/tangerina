@@ -19,6 +19,7 @@
             (::last-id (swap! state update ::last-id (fnil inc 0))))]
     {:query/tasks          (fn [_ _ _]
                              (vals (get @state :task/by-id)))
+     :query/impl           (constantly "atom")
      :mutation/create-task (fn [_ {:keys [description]} _]
                              (let [id (next-id)
                                    task {:id          id
@@ -38,6 +39,7 @@
                                        [?e :task/checked? ?checked]]
                                      (d/db conn))
                                 (map (partial zipmap [:id :description :checked]))))
+   :query/impl           (constantly "datascript")
    :mutation/create-task (fn [_ {:keys [description]} _]
                            (let [id (d/tempid :db.part/user)
                                  {:keys [db-after tempids]} (d/transact! conn [{:db/id            id
@@ -54,54 +56,81 @@
   (let [ds-schema {}
         conn (ds/create-conn ds-schema)
         state (atom {})
-        lacinia-schema (-> {:objects   {:Task {:fields {:id          {:type 'Int}
-                                                        :checked     {:type 'Boolean}
-                                                        :description {:type 'String}}}}
-                            :queries   {:tasks {:type    '(list Task)
-                                                :resolve :query/tasks}}
-                            :mutations {:create_task {:type    'Task
-                                                      :args    {:description {:type 'String}}
-                                                      :resolve :mutation/create-task}}}
-                           (lacinia.util/attach-resolvers
-                             (atom-impl {::state state})
-                             #_(datascrip-impl {::conn conn}))
-                           (lacinia.schema/compile))
-        http-service (lp/default-service lacinia-schema {})]
+        lacinia-schema {:objects   {:Task {:fields {:id          {:type 'Int}
+                                                    :checked     {:type 'Boolean}
+                                                    :description {:type 'String}}}}
+                        :queries   {:impl  {:type    'String
+                                            :resolve :query/impl}
+                                    :tasks {:type    '(list Task)
+                                            :resolve :query/tasks}}
+                        :mutations {:create_task {:type    'Task
+                                                  :args    {:description {:type 'String}}
+                                                  :resolve :mutation/create-task}}}
+        atom-http-service (-> lacinia-schema
+                              (lacinia.util/attach-resolvers (atom-impl {::state state}))
+                              lacinia.schema/compile
+                              (lp/default-service {})
+                              (assoc ::http/port 8888))
+        ds-http-service (-> lacinia-schema
+                            (lacinia.util/attach-resolvers (datascrip-impl {::conn conn}))
+                            lacinia.schema/compile
+                            (lp/default-service {})
+                            (assoc ::http/port 8889))]
     (assoc env ::conn conn
                ::state state
-               ::http-service http-service)))
+               ::http-services [::ds-http-service
+                                ::atom-http-service]
+               ::ds-http-service ds-http-service
+               ::atom-http-service atom-http-service)))
 
 ;; app.main
 
 (defn start-system
   "start with (-> (create-system {}) start-system)"
-  [{::keys [http-service]
+  [{::keys [http-services]
     :as    env}]
-  (assoc env ::http-service (-> http-service
-                                http/create-server
-                                http/start)))
+  (reduce
+    (fn [acc k]
+      (update acc k #(-> %
+                         http/create-server
+                         http/start)))
+    env http-services))
+
+
+(defn stop-system
+  [{::keys [http-services]
+    :as    env}]
+  (reduce
+    (fn [acc k]
+      (update acc k #(some-> %
+                             http/stop)))
+    env http-services))
+
 
 ;; app.test
 
 (defonce last-app (atom nil))
 
 (defn ->test-system
-  [{::keys [http-service]
+  [{::keys [http-services]
     :as    env}]
-  (swap! last-app (fn [{::keys [http-service]}]
-                    (when http-service
-                      (http/stop http-service))
+  (swap! last-app (fn [last-env]
+                    (stop-system last-env)
                     (start-system env)))
-  (assoc env ::service-fn (-> http-service
-                              http/create-servlet
-                              ::http/service-fn)))
+  (reduce
+    (fn [acc k]
+      (update acc k #(-> %
+                         http/create-servlet)))
+    env http-services))
+
 (defn gql
-  [{::keys [service-fn]} eql]
+  [env service-name eql]
   (-> eql
       (pcgql/query->graphql {})
       (->> (hash-map :query))
       json/write-str
-      (->> (response-for service-fn :post "/api"
+      (->> (response-for (get-in env [service-name ::http/service-fn])
+                         :post "/api"
                          :headers {"Content-Type" "application/json"}
                          :body))
       :body
@@ -112,12 +141,12 @@
 (deftest api-test
   (let [env (-> (create-system {})
                 (->test-system))]
-    (is (= (gql env `[{(create_task {:description "world"})
-                       [:description]}])
+    (is (= (gql env ::ds-http-service `[{(create_task {:description "world"})
+                                         [:description]}])
            {:data {:create_task {:description "world"}}}))
     (is (= {:data {:tasks [{:checked     false
                             :description "world"}]}}
-           (gql env `[{:tasks [:description :checked]}])))))
+           (gql env ::ds-http-service `[{:tasks [:description :checked]}])))))
 
 (deftest code-quality
   (is (empty? (:findings (kondo/run! {})))))
