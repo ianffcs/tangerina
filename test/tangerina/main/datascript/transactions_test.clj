@@ -23,24 +23,28 @@
                                                       {:db/id            -1
                                                        :task/description "abc"
                                                        :task/completed   false}])
-        id-do-abc                      (ds/resolve-tempid db-after tempids -1)
-        {db-complete-task :db-after}   (ds/transact! conn (tx/complete-task id-do-abc))
-        {db-create-task :db-after}     (->> ["ola" "hello"]
-                                          (mapcat tx/create-task)
+        id-abc                         (ds/resolve-tempid db-after tempids -1)
+        {db-complete-task :db-after}   (ds/transact! conn (tx/complete-task id-abc))
+        {db-create-task  :db-after
+         tempids-created :tempids}     (->> [["ola" -2] ["hello" -3]]
+                                          (mapcat (fn [[desc tempid]]
+                                                    (tx/create-task desc tempid)))
                                           (ds/transact! conn))
-        {db-update-task :db-after}     (->> [[2 "alo"] [1 "ioa"]]
+        [id-ola id-hello]              (->> [-2 -3]
+                                          (map #(ds/resolve-tempid db-after tempids-created %)))
+        {db-update-task :db-after}     (->> [[id-ola "alo"] [id-abc "ioa"]]
                                           (mapcat (fn [[id desc]]
                                                     (tx/update-task id desc)))
                                           (ds/transact! conn))
-        {db-uncomplete-task :db-after} (->> [3 1]
+        {db-uncomplete-task :db-after} (->> [id-hello id-abc]
                                           (mapcat tx/uncomplete-task)
                                           (ds/transact! conn))
-        {db-delete-task :db-after}     (->> [3 1]
+        {db-delete-task :db-after}     (->> [id-hello id-abc]
                                           (mapcat tx/delete-task)
                                           (ds/transact! conn))]
     (testing
         "found task abc with completed true"
-      (is (match? [{:db/id            1
+      (is (match? [{:db/id            id-abc
                     :task/completed   true
                     :task/description "abc"}]
                   (q/tasks db-complete-task))))

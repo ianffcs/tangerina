@@ -2,10 +2,12 @@
   (:require [datascript.core :as ds]))
 
 (defn create-task
-  [description]
-  (let [tempid (ds/tempid :db.part/user)]
-    [[:db/add tempid :task/description description]
-     [:db/add tempid :task/completed false]]))
+  ([description]
+   (let [tempid (ds/tempid :db.part/user)]
+     (create-task description tempid)))
+  ([description tempid]
+   [[:db/add tempid :task/description description]
+    [:db/add tempid :task/completed false]]))
 
 (defn uncomplete-task
   [id]
