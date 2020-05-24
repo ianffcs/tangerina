@@ -1,5 +1,6 @@
 (ns tangerina.main.datascript
-  (:require [datascript.core :as ds]))
+  (:require [datascript.core :as ds]
+            [medley.core :as medley]))
 
 (def schema
   {:task/description {:valueType   :string
@@ -46,17 +47,21 @@
           [?id :task/description]]
         db id))
 
+(defn deserialize-keys [m]
+  (medley.core/map-keys #(keyword (name %)) m))
+
 (defn datascript-impl
   [{:tangerina.main.core/keys [conn]}]
   {:query/tasks          (fn [_ _ _]
-                           (->> tasks
-                              (map (partial zipmap [:id :description :checked]))))
+                           (->> (tasks (ds/db conn))
+                              (map deserialize-keys)))
    :query/impl           (constantly "datascript")
    :mutation/create-task (fn [_ {:keys [description]} _]
                            (let [id                     (ds/tempid :db.part/user)
-                                 {:keys [db-after tempids]} (ds/transact! conn [{:db/id            id
-                                                                             :task/checked     false
-                                                                             :task/description description}])]
-                             {:id          (ds/resolve-tempid db-after tempids id)
-                              :checked     false
-                              :description description}))})
+                                 data                   {:db/id            id
+                                                         :task/checked     false
+                                                         :task/description description}
+                                 {:keys [db-after tempids]} (ds/transact! conn [data])]
+                             (-> data
+                                deserialize-keys
+                                (update :id ds/resolve-tempid db-after tempids))))})

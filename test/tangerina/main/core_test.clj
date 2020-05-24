@@ -6,6 +6,7 @@
             [clj-kondo.core :as kondo]
             [clojure.data.json :as json]
             [com.wsscode.pathom.connect.graphql2 :as pcgql]
+            [datascript.core :as ds]
             [tangerina.main.core :as core]
             [tangerina.main.atom-db :as adb]
             [tangerina.main.datascript :as tg-ds]))
@@ -53,8 +54,8 @@
      (json/read-str :key-fn keyword)))
 
 (deftest api-test
-  (let [env (-> (core/create-system {::core  (ds/create-conn tg-ds/schema)
-                                    ::state adb/state})
+  (let [env (-> (core/create-system {::core/conn  (ds/create-conn tg-ds/schema)
+                                    ::core/state adb/state})
                (->test-system))]
     (testing
         "Createa a task in ds-impl"
@@ -73,15 +74,15 @@
                               :description "ds"}]}}
              (gql env ::core/ds-http-service `[{:tasks [:description :checked]}
                                                :impl]))))
-    #_(testing
-          "Fetch from both"
-        (is (= {:data {:impl  "datascript+atom"
-                       :tasks [{:checked     false
-                                :description "ds"}
-                               {:checked     false
-                                :description "atom"}]}}
-               (gql env ::core/lacinia-wtf-service `[{:tasks [:description :checked]}
-                                                     :impl]))))))
+    (testing
+        "Fetch from both"
+      (is (= {:data {:impl  "datascript+atom"
+                     :tasks [{:checked     false
+                              :description "ds"}
+                             {:checked     false
+                              :description "atom"}]}}
+             (gql env ::core/lacinia-wtf-service `[{:tasks [:description :checked]}
+                                                   :impl]))))))
 
 (deftest code-quality
   (is (empty? (:findings (kondo/run! {})))))
