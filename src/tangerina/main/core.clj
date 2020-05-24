@@ -7,7 +7,8 @@
    [io.pedestal.http :as http]
    [tangerina.main.atom-db :as adb]
    [tangerina.main.lacinia :as tg-l]
-   [tangerina.main.datascript :as tg-ds]))
+   [tangerina.main.datascript :as tg-ds]
+   [datascript.core :as ds]))
 
 (defn create-system
   [{::keys [conn
@@ -72,7 +73,7 @@
    env http-services))
 
 (defn -main []
-  (-> {::conn  tg-ds/conn
+  (-> {::conn  (ds/create-conn tg-ds/schema)
       ::state adb/state}
      create-system
      start-system))

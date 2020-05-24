@@ -53,7 +53,7 @@
      (json/read-str :key-fn keyword)))
 
 (deftest api-test
-  (let [env (-> (core/create-system {::core  tg-ds/conn
+  (let [env (-> (core/create-system {::core  (ds/create-conn tg-ds/schema)
                                     ::state adb/state})
                (->test-system))]
     (testing
