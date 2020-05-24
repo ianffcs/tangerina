@@ -7,7 +7,8 @@
             [clojure.data.json :as json]
             [com.wsscode.pathom.connect.graphql2 :as pcgql]
             [tangerina.main.core :as core]
-            [tangerina.main.system :as sys]))
+            [tangerina.main.atom-db :as adb]
+            [tangerina.main.datascript :as tg-ds]))
 
 #_(deftest web-server
     (testing "rest route"
@@ -27,8 +28,8 @@
 (defonce last-app (atom nil))
 
 (defn ->test-system
-  [{::sys/keys [http-services]
-    :as        env}]
+  [{::core/keys [http-services]
+    :as         env}]
   (swap! last-app (fn [last-env]
                     (core/stop-system last-env)
                     (core/start-system env)))
@@ -52,34 +53,35 @@
      (json/read-str :key-fn keyword)))
 
 (deftest api-test
-  (let [env (-> (sys/create-system {})
+  (let [env (-> (core/create-system {::core  tg-ds/conn
+                                    ::state adb/state})
                (->test-system))]
     (testing
         "Createa a task in ds-impl"
       (is (= {:data {:create_task {:description "ds"}}}
-             (gql env ::sys/ds-http-service `[{(create_task {:description "ds"})
-                                               [:description]}]))))
+             (gql env ::core/ds-http-service `[{(create_task {:description "ds"})
+                                                [:description]}]))))
     (testing
         "create a task in atom-impl"
       (is (= {:data {:create_task {:description "atom"}}}
-             (gql env ::sys/atom-http-service `[{(create_task {:description "atom"})
-                                                 [:description]}]))))
+             (gql env ::core/atom-http-service `[{(create_task {:description "atom"})
+                                                  [:description]}]))))
     (testing
         "Fetch tasks from ds-impl"
       (is (= {:data {:impl  "datascript"
                      :tasks [{:checked     false
                               :description "ds"}]}}
-             (gql env ::sys/ds-http-service `[{:tasks [:description :checked]}
-                                              :impl]))))
-    (testing
-        "Fetch from both"
-      (is (= {:data {:impl  "datascript+atom"
-                     :tasks [{:checked     false
-                              :description "ds"}
-                             {:checked     false
-                              :description "atom"}]}}
-             (gql env ::sys/lacinia-wtf-service `[{:tasks [:description :checked]}
-                                                  :impl]))))))
+             (gql env ::core/ds-http-service `[{:tasks [:description :checked]}
+                                               :impl]))))
+    #_(testing
+          "Fetch from both"
+        (is (= {:data {:impl  "datascript+atom"
+                       :tasks [{:checked     false
+                                :description "ds"}
+                               {:checked     false
+                                :description "atom"}]}}
+               (gql env ::core/lacinia-wtf-service `[{:tasks [:description :checked]}
+                                                     :impl]))))))
 
 (deftest code-quality
   (is (empty? (:findings (kondo/run! {})))))

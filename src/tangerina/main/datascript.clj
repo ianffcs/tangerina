@@ -1,6 +1,5 @@
 (ns tangerina.main.datascript
-  (:require [datascript.core :as ds]
-            [tangerina.main.system :as sys]))
+  (:require [datascript.core :as ds]))
 
 (def schema
   {:task/description {:valueType   :string
@@ -48,14 +47,9 @@
         db id))
 
 (defn datascript-impl
-  [{::sys/keys [conn]}]
+  [{:tangerina.main.core/keys [conn]}]
   {:query/tasks          (fn [_ _ _]
-                           (->> (ds/q '[:find ?e ?description ?checked
-                                      :in $
-                                      :where
-                                      [?e :task/description ?description]
-                                      [?e :task/checked ?checked]]
-                                    (ds/db conn))
+                           (->> tasks
                               (map (partial zipmap [:id :description :checked]))))
    :query/impl           (constantly "datascript")
    :mutation/create-task (fn [_ {:keys [description]} _]

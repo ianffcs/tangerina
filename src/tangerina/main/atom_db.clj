@@ -1,8 +1,9 @@
-(ns tangerina.main.atom-db
-  (:require [tangerina.main.system :as sys]))
+(ns tangerina.main.atom-db)
+
+(def state (atom {}))
 
 (defn atom-impl
-  [{::sys/keys [state]}]
+  [{:tangerina.main.core/keys [state]}]
   (letfn [(next-id []
             (::last-id (swap! state update ::last-id (fnil inc 0))))]
     {:query/tasks          (fn [_ _ _]
