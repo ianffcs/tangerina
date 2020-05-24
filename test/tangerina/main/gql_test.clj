@@ -185,16 +185,20 @@
                                              [:description]}]))))
     (testing
       "Fetch tasks from ds-impl"
-      (is (= {:data {:tasks [{:checked     false
+      (is (= {:data {:impl  "datascript"
+                     :tasks [{:checked     false
                               :description "ds"}]}}
-             (gql env ::ds-http-service `[{:tasks [:description :checked]}]))))
+             (gql env ::ds-http-service `[{:tasks [:description :checked]}
+                                          :impl]))))
     (testing
       "Fetch from both"
-      (is (= {:data {:tasks [{:checked     false
+      (is (= {:data {:impl  "datascript+atom"
+                     :tasks [{:checked     false
                               :description "ds"}
                              {:checked     false
                               :description "atom"}]}}
-             (gql env ::lacinia-wtf-service `[{:tasks [:description :checked]}]))))))
+             (gql env ::lacinia-wtf-service `[{:tasks [:description :checked]}
+                                              :impl]))))))
 
 (deftest code-quality
   (is (empty? (:findings (kondo/run! {})))))
