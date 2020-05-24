@@ -9,7 +9,9 @@
             [com.walmartlabs.lacinia.schema :as lacinia.schema]
             [com.walmartlabs.lacinia.util :as lacinia.util]
             [com.wsscode.pathom.connect.graphql2 :as pcgql]
-            [datascript.core :as d]))
+            [datascript.core :as d]
+            [com.walmartlabs.lacinia :as lacinia]
+            [clojure.string :as string]))
 
 ;; app.core
 
@@ -49,7 +51,26 @@
                               :checked?    false
                               :description description}))})
 
+(defn lacinia-impl
+  [{::keys [lacinias]}]
+  {:query/tasks          (fn [a _ _]
+                           (for [impl lacinias
+                                 task (-> (lacinia/execute impl
+                                                           "{ tasks { id description checked } }"
+                                                           {}
+                                                           {})
+                                          :data
+                                          :tasks)]
+                             task))
 
+   :query/impl           (fn [_ _ _]
+                           (string/join "+" (for [impl lacinias]
+                                              (:impl (:data (lacinia/execute impl
+                                                                             "{ impl }"
+                                                                             {}
+                                                                             {}))))))
+   :mutation/create-task (fn [_ _ _]
+                           (throw (ex-info "You can't mutate here" {})))})
 
 (defn create-system
   [{::keys [] :as env}]
@@ -66,21 +87,32 @@
                         :mutations {:create_task {:type    'Task
                                                   :args    {:description {:type 'String}}
                                                   :resolve :mutation/create-task}}}
-        atom-http-service (-> lacinia-schema
-                              (lacinia.util/attach-resolvers (atom-impl {::state state}))
-                              lacinia.schema/compile
+        ds-gql-schema (-> lacinia-schema
+                          (lacinia.util/attach-resolvers (datascrip-impl {::conn conn}))
+                          lacinia.schema/compile)
+        atom-http-schema (-> lacinia-schema
+                             (lacinia.util/attach-resolvers (atom-impl {::state state}))
+                             lacinia.schema/compile)
+        lacinia-wtf-schema (-> lacinia-schema
+                               (lacinia.util/attach-resolvers (lacinia-impl {::lacinias [ds-gql-schema
+                                                                                         atom-http-schema]}))
+                               lacinia.schema/compile)
+        atom-http-service (-> atom-http-schema
                               (lp/default-service {})
                               (assoc ::http/port 8888))
-        ds-http-service (-> lacinia-schema
-                            (lacinia.util/attach-resolvers (datascrip-impl {::conn conn}))
-                            lacinia.schema/compile
+        lacinia-wtf-service (-> lacinia-wtf-schema
+                                (lp/default-service {})
+                                (assoc ::http/port 8890))
+        ds-http-service (-> ds-gql-schema
                             (lp/default-service {})
                             (assoc ::http/port 8889))]
     (assoc env ::conn conn
                ::state state
                ::http-services [::ds-http-service
+                                ::lacinia-wtf-service
                                 ::atom-http-service]
                ::ds-http-service ds-http-service
+               ::lacinia-wtf-service lacinia-wtf-service
                ::atom-http-service atom-http-service)))
 
 ;; app.main
@@ -141,12 +173,28 @@
 (deftest api-test
   (let [env (-> (create-system {})
                 (->test-system))]
-    (is (= (gql env ::ds-http-service `[{(create_task {:description "world"})
-                                         [:description]}])
-           {:data {:create_task {:description "world"}}}))
-    (is (= {:data {:tasks [{:checked     false
-                            :description "world"}]}}
-           (gql env ::ds-http-service `[{:tasks [:description :checked]}])))))
+    (testing
+      "Createa a task in ds-impl"
+      (is (= {:data {:create_task {:description "ds"}}}
+             (gql env ::ds-http-service `[{(create_task {:description "ds"})
+                                           [:description]}]))))
+    (testing
+      "create a task in atom-impl"
+      (is (= {:data {:create_task {:description "atom"}}}
+             (gql env ::atom-http-service `[{(create_task {:description "atom"})
+                                             [:description]}]))))
+    (testing
+      "Fetch tasks from ds-impl"
+      (is (= {:data {:tasks [{:checked     false
+                              :description "ds"}]}}
+             (gql env ::ds-http-service `[{:tasks [:description :checked]}]))))
+    (testing
+      "Fetch from both"
+      (is (= {:data {:tasks [{:checked     false
+                              :description "ds"}
+                             {:checked     false
+                              :description "atom"}]}}
+             (gql env ::lacinia-wtf-service `[{:tasks [:description :checked]}]))))))
 
 (deftest code-quality
   (is (empty? (:findings (kondo/run! {})))))
