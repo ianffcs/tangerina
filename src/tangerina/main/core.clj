@@ -11,7 +11,7 @@
    [tangerina.main.datascript :as tg-ds]
    [datascript.core :as ds]))
 
-(defn lacinia-impl
+(defn lacinia-wtf-impl
   [{::keys [lacinias]}]
   {:query/tasks (fn [_ _ _]
                   (for [impl lacinias
@@ -53,8 +53,8 @@
                                (attach-resolvers (adb/atom-impl {::state state}))
                                lacinia.schema/compile)
         lacinia-wtf-schema  (-> lacinia-schema
-                               (attach-resolvers (lacinia-impl {::lacinias [ds-gql-schema
-                                                                            atom-http-schema]}))
+                               (attach-resolvers (lacinia-wtf-impl {::lacinias [ds-gql-schema
+                                                                                atom-http-schema]}))
                                lacinia.schema/compile)
         atom-http-service   (-> atom-http-schema
                                (lp/default-service {})
