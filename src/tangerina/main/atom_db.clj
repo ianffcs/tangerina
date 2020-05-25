@@ -2,6 +2,9 @@
 
 (def state (atom {}))
 
+(defn start-db []
+  (reset! state (atom nil)))
+
 (defn atom-impl
   [{:tangerina.main.core/keys [state]}]
   (letfn [(next-id []

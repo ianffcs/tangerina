@@ -1,14 +1,36 @@
 (ns tangerina.main.core
   (:require
+   [com.walmartlabs.lacinia :as lacinia]
    [com.walmartlabs.lacinia.util :refer [attach-resolvers]]
    [com.walmartlabs.lacinia.schema :as lacinia.schema]
    [com.walmartlabs.lacinia.pedestal2 :as lp]
+   [clojure.string :as string]
    #_[datascript.core :as ds]
    [io.pedestal.http :as http]
    [tangerina.main.atom-db :as adb]
-   [tangerina.main.lacinia :as tg-l]
    [tangerina.main.datascript :as tg-ds]
    [datascript.core :as ds]))
+
+(defn lacinia-impl
+  [{::keys [lacinias]}]
+  {:query/tasks (fn [_ _ _]
+                  (for [impl lacinias
+                        task (-> (lacinia/execute impl
+                                                 "{ tasks { id description checked } }"
+                                                 {}
+                                                 {})
+                                :data
+                                :tasks)]
+                    task))
+
+   :query/impl           (fn [_ _ _]
+                           (string/join "+" (for [impl lacinias]
+                                              (:impl (:data (lacinia/execute impl
+                                                                             "{ impl }"
+                                                                             {}
+                                                                             {}))))))
+   :mutation/create-task (fn [_ _ _]
+                           (throw (ex-info "You can't mutate here" {})))})
 
 (defn create-system
   [{::keys [conn
@@ -31,8 +53,8 @@
                                (attach-resolvers (adb/atom-impl {::state state}))
                                lacinia.schema/compile)
         lacinia-wtf-schema  (-> lacinia-schema
-                               (attach-resolvers (tg-l/lacinia-impl {::lacinias [ds-gql-schema
-                                                                                 atom-http-schema]}))
+                               (attach-resolvers (lacinia-impl {::lacinias [ds-gql-schema
+                                                                            atom-http-schema]}))
                                lacinia.schema/compile)
         atom-http-service   (-> atom-http-schema
                                (lp/default-service {})

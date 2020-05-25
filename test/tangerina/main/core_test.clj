@@ -55,7 +55,7 @@
 
 (deftest api-test
   (let [env (-> (core/create-system {::core/conn  (ds/create-conn tg-ds/schema)
-                                    ::core/state adb/state})
+                                    ::core/state (adb/start-db)})
                (->test-system))]
     (testing
         "Createa a task in ds-impl"

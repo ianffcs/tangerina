@@ -50,11 +50,14 @@
 (defn deserialize-keys [m]
   (medley.core/map-keys #(keyword (name %)) m))
 
+#_(defn serialize-keys [m])
+
 (defn datascript-impl
   [{:tangerina.main.core/keys [conn]}]
   {:query/tasks          (fn [_ _ _]
                            (->> (tasks (ds/db conn))
                               (map deserialize-keys)))
+   :query/get-a-task     ()
    :query/impl           (constantly "datascript")
    :mutation/create-task (fn [_ {:keys [description]} _]
                            (let [id                     (ds/tempid :db.part/user)
