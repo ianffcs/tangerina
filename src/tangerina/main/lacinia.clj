@@ -1,10 +1,10 @@
 (ns tangerina.main.lacinia
   (:require [com.walmartlabs.lacinia :as lacinia]
-            [tangerina.main.lacinia :as tg-lacinia]
+            [tangerina.main.core :as core]
             [clojure.string :as string]))
 
 (defn lacinia-impl
-  [{::tg-lacinia/keys [lacinias]}]
+  [{::core/keys [lacinias] :as sys}]
   {:query/tasks (fn [a _ _]
                   (for [impl lacinias
                         task (-> (lacinia/execute impl
@@ -21,5 +21,7 @@
                                                                              "{ impl }"
                                                                              {}
                                                                              {}))))))
-   :mutation/create-task (fn [_ _ _]
+   :mutation/create-task (fn [c a _]
+                           (prn c)
+                           (prn a)
                            (throw (ex-info "You can't mutate here" {})))})
