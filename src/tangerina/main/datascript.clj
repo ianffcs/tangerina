@@ -47,24 +47,52 @@
           [?id :task/description]]
         db id))
 
-(defn deserialize-keys [m]
-  (medley.core/map-keys #(keyword (name %)) m))
+(defn get-tasks-by-ids
+  [db ids]
+  (reduce #(get-task-by-id db %) ids))
 
-#_(defn serialize-keys [m])
+(defn deserialize-keys [{:db/keys   [id]
+                         :task/keys [description
+                                     checked]}]
+  {:id          id
+   :description description
+   :checked     checked})
+
+(defn serialize-keys
+  [{:keys [id description checked]}]
+  {:db/id            id
+   :task/description description
+   :task/checked     checked})
 
 (defn datascript-impl
   [{:tangerina.main.core/keys [conn]}]
-  {:query/tasks          (fn [_ _ _]
-                           (->> (tasks (ds/db conn))
-                              (map deserialize-keys)))
-   :query/get-a-task     ()
-   :query/impl           (constantly "datascript")
-   :mutation/create-task (fn [_ {:keys [description]} _]
-                           (let [id                     (ds/tempid :db.part/user)
-                                 data                   {:db/id            id
-                                                         :task/checked     false
-                                                         :task/description description}
-                                 {:keys [db-after tempids]} (ds/transact! conn [data])]
-                             (-> data
-                                deserialize-keys
-                                (update :id ds/resolve-tempid db-after tempids))))})
+  {:query/tasks            (fn [_ _ _]
+                             (->> (tasks (ds/db conn))
+                                  (map deserialize-keys)))
+   :query/impl             (constantly "datascript")
+   :mutation/create-task   (fn [_ {:keys [description]} _]
+                             (let [id                         (ds/tempid :db.part/user)
+                                   data                       {:db/id            id
+                                                               :task/checked     false
+                                                               :task/description description}
+                                   {:keys [db-after tempids]} (ds/transact! conn [data])]
+                               (-> data
+                                   deserialize-keys
+                                   (update :id ds/resolve-tempid db-after tempids))))
+   :mutation/complete-task (fn [_ {:keys [id]} _]
+                             (let [{checked-bef :checked
+                                    :as         task-bef} (get-task-by-id (ds/db conn) id)]
+                               (ds/transact! conn (if checked-bef
+                                                    (uncomplete-task checked-bef)
+                                                    (complete-task checked-bef)))
+                               (update task-bef :checked not)))
+   :mutation/update-task   (fn [_ {:keys [id description]} _]
+                             (let [task-bef (get-task-by-id (ds/db conn) id)]
+                               (ds/transact! conn (update-task id description))
+                               (-> task-bef
+                                   deserialize-keys
+                                   (assoc :description description))))
+   :mutation/delete-task   (fn [_ {:keys [id]} _]
+                             (let [task-bef (get-task-by-id (ds/db conn) id)]
+                               (ds/transact! conn (delete-task id))
+                               (deserialize-keys task-bef)))})

@@ -37,43 +37,43 @@
             state
             lacinia-pedestal-conf]
     :as    env}]
-  (let [lacinia-schema      {:objects   {:Task {:fields {:id          {:type 'Int}
-                                                         :checked     {:type 'Boolean}
-                                                         :description {:type 'String}}}}
-                             :queries   {:impl  {:type    'String
-                                                 :resolve :query/impl}
-                                         :tasks {:type    '(list Task)
-                                                 :resolve :query/tasks}}
-                             :mutations {:create_task {:type    'Task
-                                                       :args    {:description {:type 'String}}
-                                                       :resolve :mutation/create-task}}}
-        ds-gql-schema       (-> lacinia-schema
-                               (attach-resolvers (tg-ds/datascript-impl {::conn conn}))
-                               lacinia.schema/compile)
-        atom-http-schema    (-> lacinia-schema
-                               (attach-resolvers (adb/atom-impl {::state state}))
-                               lacinia.schema/compile)
-        lacinia-wtf-schema  (-> lacinia-schema
-                               (attach-resolvers (lacinia-wtf-impl {::lacinias [ds-gql-schema
-                                                                                atom-http-schema]}))
-                               lacinia.schema/compile)
-        atom-http-service   (-> atom-http-schema
-                               (lp/default-service lacinia-pedestal-conf)
-                               (assoc ::http/port 8889))
-        lacinia-wtf-service (-> lacinia-wtf-schema
-                               (lp/default-service lacinia-pedestal-conf)
-                               (assoc ::http/port 8890))
-        ds-http-service     (-> ds-gql-schema
-                               (lp/default-service lacinia-pedestal-conf)
-                               (assoc ::http/port 8888))]
+  (let [lacinia-schema          {:objects   {:Task {:fields {:id          {:type 'Int}
+                                                             :checked     {:type 'Boolean}
+                                                             :description {:type 'String}}}}
+                                 :queries   {:impl  {:type    'String
+                                                     :resolve :query/impl}
+                                             :tasks {:type    '(list Task)
+                                                     :resolve :query/tasks}}
+                                 :mutations {:createTask {:type    'Task
+                                                          :args    {:description {:type 'String}}
+                                                          :resolve :mutation/create-task}}}
+        ds-gql-schema           (-> lacinia-schema
+                                   (attach-resolvers (tg-ds/datascript-impl {::conn conn}))
+                                   lacinia.schema/compile)
+        #_#_atom-http-schema    (-> lacinia-schema
+                                    (attach-resolvers (adb/atom-impl {::state state}))
+                                    lacinia.schema/compile)
+        #_#_lacinia-wtf-schema  (-> lacinia-schema
+                                    (attach-resolvers (lacinia-wtf-impl {::lacinias [ds-gql-schema
+                                                                                     atom-http-schema]}))
+                                    lacinia.schema/compile)
+        #_#_atom-http-service   (-> atom-http-schema
+                                    (lp/default-service lacinia-pedestal-conf)
+                                    (assoc ::http/port 8889))
+        #_#_lacinia-wtf-service (-> lacinia-wtf-schema
+                                    (lp/default-service lacinia-pedestal-conf)
+                                    (assoc ::http/port 8890))
+        ds-http-service         (-> ds-gql-schema
+                                   (lp/default-service lacinia-pedestal-conf)
+                                   (assoc ::http/port 8888))]
     (assoc env ::conn conn
            ::state state
            ::http-services [::ds-http-service
-                            ::lacinia-wtf-service
-                            ::atom-http-service]
+                            #_::lacinia-wtf-service
+                            #_::atom-http-service]
            ::ds-http-service ds-http-service
-           ::lacinia-wtf-service lacinia-wtf-service
-           ::atom-http-service atom-http-service)))
+           #_#_::lacinia-wtf-service lacinia-wtf-service
+           #_#_::atom-http-service atom-http-service)))
 
 (defn start-system
   "start with (-> (create-system {}) start-system)"
