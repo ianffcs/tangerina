@@ -34,7 +34,8 @@
 
 (defn create-system
   [{::keys [conn
-            state]
+            state
+            lacinia-pedestal-conf]
     :as    env}]
   (let [lacinia-schema      {:objects   {:Task {:fields {:id          {:type 'Int}
                                                          :checked     {:type 'Boolean}
@@ -57,14 +58,14 @@
                                                                                 atom-http-schema]}))
                                lacinia.schema/compile)
         atom-http-service   (-> atom-http-schema
-                               (lp/default-service {})
-                               (assoc ::http/port 8888))
+                               (lp/default-service lacinia-pedestal-conf)
+                               (assoc ::http/port 8889))
         lacinia-wtf-service (-> lacinia-wtf-schema
-                               (lp/default-service {})
+                               (lp/default-service lacinia-pedestal-conf)
                                (assoc ::http/port 8890))
         ds-http-service     (-> ds-gql-schema
-                               (lp/default-service {})
-                               (assoc ::http/port 8889))]
+                               (lp/default-service lacinia-pedestal-conf)
+                               (assoc ::http/port 8888))]
     (assoc env ::conn conn
            ::state state
            ::http-services [::ds-http-service
@@ -103,7 +104,9 @@
   (stop-system @sys-state))
 
 (defn -main []
-  (->> {::conn  (ds/create-conn tg-ds/schema)
-      ::state adb/state}
+  (->> {::conn                  (ds/create-conn tg-ds/schema)
+      ::state                 adb/state
+      ::lacinia-pedestal-conf {:api-path "/graphql"
+                               :ide-path "/graphiql"}}
      create-system
      (start-system! sys-state)))
