@@ -52,14 +52,38 @@
                                                 [:description]}]))))
     (testing
         "Fetch tasks from ds-impl"
-      (is (= {:data {:impl  "datascript"
-                     :tasks [{:checked     false
+      (is (= {:data {:tasks [{:checked     false
                               :description "ds"
                               :id          1}]}}
-             (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}
-                                               :impl]))))
-    (prn (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}
-                                           :impl]))
+             (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}]))))
+    (testing "completing a task"
+      (is (= {:data {:completeTask {:description "ds"
+                                    :checked     true
+                                    :id          1}}}
+             (gql env ::core/ds-http-service `[{(completeTask {:id 1})
+                                                [:description :checked :id]}]))))
+
+    (testing "updating a task"
+      (is (= {:data {:updateTask {:description "alo"
+                                  :checked     true
+                                  :id          1}}}
+             (gql env ::core/ds-http-service `[{(updateTask {:id 1 :description "alo"})
+                                                [:description :checked :id]}]))))
+    (testing "uncompleting a task"
+      (is (= {:data {:completeTask {:description "alo"
+                                    :checked     false
+                                    :id          1}}}
+             (gql env ::core/ds-http-service `[{(completeTask {:id 1})
+                                                [:description :checked :id]}]))))
+    (testing "deleting a task"
+      (is (= {:data {:deleteTask {:description "alo"
+                                  :checked     false
+                                  :id          1}}}
+             (gql env ::core/ds-http-service `[{(deleteTask {:id 1})
+                                                [:description :checked :id]}])))
+      (is (= {:data {:tasks []}}
+             (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}]))))
+
     #_#_(testing
             "create a task in atom-impl"
           (is (= {:data {:createTask {:description "atom"}}}

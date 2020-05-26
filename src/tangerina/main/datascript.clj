@@ -80,19 +80,20 @@
                                    deserialize-keys
                                    (update :id ds/resolve-tempid db-after tempids))))
    :mutation/complete-task (fn [_ {:keys [id]} _]
-                             (let [{checked-bef :checked
-                                    :as         task-bef} (get-task-by-id (ds/db conn) id)]
-                               (ds/transact! conn (if checked-bef
-                                                    (uncomplete-task checked-bef)
-                                                    (complete-task checked-bef)))
-                               (update task-bef :checked not)))
+                             (let [{checked-bef :task/checked
+                                    :as         task-bef} (first (get-task-by-id (ds/db conn) id))
+                                   checking-data          (if checked-bef
+                                                            (uncomplete-task id)
+                                                            (complete-task id))]
+                               (ds/transact! conn checking-data)
+                               (deserialize-keys (update task-bef :task/checked not))))
    :mutation/update-task   (fn [_ {:keys [id description]} _]
-                             (let [task-bef (get-task-by-id (ds/db conn) id)]
+                             (let [task-bef (first (get-task-by-id (ds/db conn) id))]
                                (ds/transact! conn (update-task id description))
                                (-> task-bef
                                    deserialize-keys
                                    (assoc :description description))))
    :mutation/delete-task   (fn [_ {:keys [id]} _]
-                             (let [task-bef (get-task-by-id (ds/db conn) id)]
+                             (let [task-bef (first (get-task-by-id (ds/db conn) id))]
                                (ds/transact! conn (delete-task id))
                                (deserialize-keys task-bef)))})
