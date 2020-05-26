@@ -94,8 +94,16 @@
                             http/stop)))
    env http-services))
 
+(defonce sys-state (atom nil))
+
+(defn start-system! [sys-state system]
+  (reset! sys-state (start-system system)))
+
+(defn stop-system! [sys-state]
+  (stop-system @sys-state))
+
 (defn -main []
-  (-> {::conn  (ds/create-conn tg-ds/schema)
+  (->> {::conn  (ds/create-conn tg-ds/schema)
       ::state adb/state}
      create-system
-     start-system))
+     (start-system! sys-state)))
