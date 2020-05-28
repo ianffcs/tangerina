@@ -85,10 +85,13 @@
 (defn ui-editing-form [{::keys [description
                                 on-edition
                                 close-edition]}]
-  [:span [:input {:type         "text"
-                  :value        description
-                  :on-change    on-edition
-                  :on-key-press close-edition}]])
+  [:form {:on-submit #(do
+                        (.preventDefault %)
+                        (when close-edition
+                          (close-edition %)))}
+   [:input {:type      "text"
+            :value     description
+            :on-change on-edition}]])
 
 (defn set-description
   [task-cursor]
@@ -96,8 +99,8 @@
         editing?      (:editing @task-cursor)
         on-edition    #(swap! task-cursor assoc :description (.. % -target -value))
         begin-edit    #(swap! task-cursor assoc :editing true)
-        close-edition #((when (= 13 (.-charCode %))
-                          (set-description-task! task-cursor)))]
+        close-edition #(when-not (string/blank? description)
+                         (set-description-task! task-cursor))]
     (if editing?
       [:span {:class "taskDescription"
               :style {:margin "3px"}}
