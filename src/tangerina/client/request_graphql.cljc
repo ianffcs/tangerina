@@ -32,16 +32,23 @@
     (->> (gql-request! (get graphql-app :url) eql)
          async/<!)))
 
-#_#_(async/go (->> `[{(createTask {:description "foi!"})
-                      [:id :checked :description]}]
-                   execute!
-                   async/<!
-                   prn))
+#_(async/go (->> `[{(createTask {:description "foi!"})
+                    [:id :checked :description]}]
+                 execute!
+                 async/<!
+                 prn))
+#_(async/go
+    (->> `[{(setDescriptionTask {:id 1 :description "aaa"})
+          [:description :checked :id]}]
+       execute!
+       async/<!
+       :setDescriptionTask
+       prn))
 
-(async/go (->> [{:tasks
-                 [:id :checked :description]}]
-               execute!
-               async/<!
-               :tasks
-               (sort-by :id)
-               prn))
+#_(async/go (->> [{:tasks
+                   [:id :checked :description]}]
+                 execute!
+                 async/<!
+                 :tasks
+                 (sort-by :id)
+                 prn))

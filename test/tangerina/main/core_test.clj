@@ -83,7 +83,8 @@
              (gql env ::core/ds-http-service `[{(deleteTask {:id 1})
                                                 [:description :checked :id]}])))
       (is (= {:data {:tasks []}}
-             (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}]))))))
+             (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}]))))
+    (core/stop-system! last-app)))
 
 (deftest code-quality
   (is (empty? (:findings (kondo/run! {})))))
