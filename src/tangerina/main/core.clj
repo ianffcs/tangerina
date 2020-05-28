@@ -1,15 +1,10 @@
 (ns tangerina.main.core
   (:require
    [clojure.java.io :as io]
-   [com.walmartlabs.lacinia :as lacinia]
    [com.walmartlabs.lacinia.util :refer [attach-resolvers]]
    [com.walmartlabs.lacinia.schema :as lacinia.schema]
    [com.walmartlabs.lacinia.pedestal2 :as lp]
-   [clojure.string :as string]
-   #_[datascript.core :as ds]
    [io.pedestal.http :as http]
-   #_[io.pedestal.http.route :as route]
-   [tangerina.main.atom-db :as adb]
    [tangerina.main.datascript :as tg-ds]
    [datascript.core :as ds]))
 
