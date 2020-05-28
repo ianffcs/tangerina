@@ -1,65 +1,72 @@
 (ns tangerina.client.core
   (:require [reagent.core :as r]
             [reagent.dom :as dom]
-            [tangerina.client.http-driver :as http]
             [tangerina.client.request-graphql :as gql]
             [clojure.core.async :as async]
             [clojure.string :as string]))
-
-(comment (gql/defineTask!
-           {:http-driver http/request-async}
-           {:description "oi"}))
 
 (def state (r/atom {:tasks :state/pending}))
 
 (defn insert-tasks! [tasks description]
   (async/go
-    (let [inserted (async/<! (gql/defineTask!
-                               {:http-driver http/request-async}
-                               {:description description}))]
+    (let [inserted (->> `[{(createTask {:description ~description})
+                         [:id :checked :description]}]
+                      gql/execute!
+                      async/<!
+                      :createTask)]
       (swap! tasks conj inserted))))
 
-(defn complete-task!
+(defn check-task!
   [task-cursor]
-  (async/go
-    (async/<! (gql/defineTask!
-                {:http-driver http/request-async}
-                (update @task-cursor
-                        :completed not)))
-    (swap! task-cursor update :completed not)))
+  (let [{:keys [id]} @task-cursor]
+    (async/go
+      (->> `[{(completeTask {:id ~id})
+            [:id :checked :description]}]
+         gql/execute!
+         async/<!
+         :completeTask)
+      (swap! task-cursor update :checked not))))
 
 (defn update-task!
   [task-cursor]
-  (let [{:keys [id description completed]} @task-cursor]
+  (let [{:keys [id description]} @task-cursor]
     (async/go
-      (async/<! (gql/defineTask!
-                  {:http-driver http/request-async}
-                  {:id id :description description :completed completed}))
+      (->> `[{(updateTask {:id ~id :description ~description})
+            [:description :checked :id]}]
+         gql/execute!
+         async/<!
+         :updateTask)
       (swap! task-cursor assoc :editing false)
       (swap! task-cursor dissoc :editing))))
 
 (defn delete-task!
   [task-cursor]
-  (let [{:keys [id delete]} @task-cursor]
+  (let [{:keys [id]} @task-cursor]
     (async/go
-      (async/<! (gql/defineTask!
-                  {:http-driver http/request-async}
-                  {:id id :delete true}))
+      (->> `[{(deleteTask {:id ~id})
+            [:id :checked :description]}]
+         gql/execute!
+         async/<!
+         :deleteTask)
       (swap! task-cursor update :delete not))))
 
 (defn get-all-tasks! [tasks]
   (async/go
-    (let [tasks-return (async/<!
-                        (gql/listTasks! {:http-driver http/request-async} {}))]
+    (let [tasks-return (->> `[{:tasks
+                             [:id :checked :description]}]
+                          gql/execute!
+                          async/<!
+                          :tasks
+                          (sort-by (comp int :id))
+                          vec)]
+      (reset! tasks tasks-return))))
 
-      (reset! tasks (vec (sort-by (comp int :id) tasks-return))))))
-
-(defn complete-task [task-cursor]
+(defn check-task [task-cursor]
   (let [checkbox       (r/atom false)
-        completed?     (:completed @task-cursor)
+        completed?     (:checked @task-cursor)
         checking       (if completed? "on" "off")
         check-checkbox #(swap! checkbox not)
-        on-completion  #(complete-task! task-cursor)
+        on-completion  #(check-task! task-cursor)
         input-props    {:type      "checkbox"
                         :value     true
                         :checked   checking
@@ -130,7 +137,7 @@
     (if delete
       [:<>]
       [:<>
-       [complete-task task-cursor]
+       [check-task task-cursor]
        [ui-id task-cursor]       " "
        [update-description task-cursor]
        [delete-task task-cursor]])))
@@ -138,7 +145,7 @@
 (defn task-element
   [task-cursor]
   (let [id         (:id @task-cursor)
-        completed? (:completed @task-cursor)]
+        completed? (:checked @task-cursor)]
     [:div {:key id}
      (if completed?
        [:div [:strike (task-template task-cursor)]]
@@ -181,24 +188,24 @@
   (let [description (r/atom "")]
     (fn [{::keys [tasks]}]
       (let [current-description @description
-            on-description #(reset! description %)
-            on-submit (when-not (string/blank? current-description)
-                        #(do
-                           (insert-tasks! tasks current-description)
-                           (on-description "")))]
+            on-description      #(reset! description %)
+            on-submit           (when-not (string/blank? current-description)
+                                  #(do
+                                     (insert-tasks! tasks current-description)
+                                     (on-description "")))]
         [ui-description-component {::on-description on-description
                                    ::description    current-description
                                    ::on-submit      on-submit}]))))
+
 (defn index
   []
   [:<>
    [task-list! (r/cursor state [:tasks])]
    [description-component (r/cursor state [:tasks])]])
 
-
 (defn main
   []
-  (.log js/console (prn (r/cursor state [:tasks])))
+  (.log js/console "aaa")
   (dom/render
    [index]
    (.getElementById js/document "app")))

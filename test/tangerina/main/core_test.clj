@@ -1,6 +1,6 @@
 (ns tangerina.main.core-test
   (:require [clj-http.client :as client]
-            [matcher-combinators.test :refer [match?]]
+            #_[matcher-combinators.test :refer [match?]]
             [clojure.test :refer [testing is deftest]]
             [io.pedestal.http :as http]
             [io.pedestal.test :refer [response-for]]
@@ -39,6 +39,8 @@
      :body
      (json/read-str :key-fn keyword)))
 
+#_(pcgql/query->graphql `[{(createTask {:description "ds"})
+                           [:description]}] {})
 (deftest api-test
   (let [env (-> (core/create-system {::core/conn                  (ds/create-conn tg-ds/schema)
                                     ::core/state                 (adb/start-db)
@@ -47,9 +49,9 @@
                (->test-system))]
     (testing
         "Create a task in ds-impl"
-      (is (= {:data {:createTask {:description "ds"}}}
+      (is (= {:data {:createTask {:id 1, :checked false, :description "ds"}}}
              (gql env ::core/ds-http-service `[{(createTask {:description "ds"})
-                                                [:description]}]))))
+                                                [:id :checked :description]}]))))
     (testing
         "Fetch tasks from ds-impl"
       (is (= {:data {:tasks [{:checked     false
@@ -105,13 +107,13 @@
 
 (defn http-gql [eql]
   (-> {:url          "http://localhost:8888/graphql"
-       :method       :post
-       :content-type :json
-       :body         (-> eql
-                         (pcgql/query->graphql {})
-                         (->> (hash-map :query))
-                         json/write-str)}
-      client/request))
+      :method       :post
+      :content-type :json
+      :body         (-> eql
+                       (pcgql/query->graphql {})
+                       (->> (hash-map :query))
+                       json/write-str)}
+     client/request))
 
 #_(deftest web-server
     (testing "graphql route"

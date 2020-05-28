@@ -18,7 +18,7 @@
          ;; middleware of routing
          com.walmartlabs/lacinia-pedestal {:mvn/version "0.14.0-alpha-1"}
          com.walmartlabs/lacinia          {:mvn/version "0.37.0-alpha-1"}
-         com.wsscode/pathom               {:mvn/version "2.3.0-alpha7"}
+         com.wsscode/pathom               {:mvn/version "2.3.0-alpha9"}
 
          ;; dbs
          ;; TODO use another dbs

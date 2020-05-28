@@ -21,13 +21,15 @@
     #?(:clj  (-> req
                  (assoc :async? true)
                  (c/request respond raise))
-       :cljs (let [{:keys [url method query-params]} req
-                   search                            (new js/URLSearchParams)]
+       :cljs (let [{:keys [url method query-params mode headers]} req
+                   search                                         (new js/URLSearchParams)]
                (doseq [[k v] query-params]
                  (.append search k v))
                (-> (js/fetch (str url "?" (.toString search))
                              #js{:method      (string/upper-case (name method))
-                                 :queryParams (clj->js query-params)})
+                                 :queryParams (clj->js query-params)
+                                 :mode        mode
+                                 :headers     headers})
                    (.then (fn [response]
                             (-> response
                                 .json

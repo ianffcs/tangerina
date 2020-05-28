@@ -1,5 +1,6 @@
 (ns tangerina.main.core
   (:require
+   [clojure.java.io :as io]
    [com.walmartlabs.lacinia :as lacinia]
    [com.walmartlabs.lacinia.util :refer [attach-resolvers]]
    [com.walmartlabs.lacinia.schema :as lacinia.schema]
@@ -7,9 +8,20 @@
    [clojure.string :as string]
    #_[datascript.core :as ds]
    [io.pedestal.http :as http]
+   #_[io.pedestal.http.route :as route]
    [tangerina.main.atom-db :as adb]
    [tangerina.main.datascript :as tg-ds]
    [datascript.core :as ds]))
+
+(def ^:private idx-html (slurp (io/resource "public/index.html")))
+
+(defn index [_]
+  {:status  200
+   :body    idx-html
+   :headers {"Content-Type" "text/html"}})
+
+(def front-route
+  #{["/index" :get index :route-name ::index]})
 
 (defn lacinia-wtf-impl
   [{::keys [lacinias]}]
@@ -75,15 +87,19 @@
                                     (assoc ::http/port 8890))
         ds-http-service         (-> ds-gql-schema
                                    (lp/default-service lacinia-pedestal-conf)
+                                   (update ::http/routes into front-route)
+                                   (assoc ::http/resource-path "public"
+                                          ::http/file-path "target/public")
                                    (assoc ::http/port 8888))]
-    (assoc env ::conn conn
-           ::state state
-           ::http-services [::ds-http-service
-                            #_::lacinia-wtf-service
-                            #_::atom-http-service]
-           ::ds-http-service ds-http-service
-           #_#_::lacinia-wtf-service lacinia-wtf-service
-           #_#_::atom-http-service atom-http-service)))
+    (-> env
+       (assoc ::conn conn
+              ::state state
+              ::http-services [::ds-http-service
+                               #_::lacinia-wtf-service
+                               #_::atom-http-service]
+              ::ds-http-service ds-http-service
+              #_#_::lacinia-wtf-service lacinia-wtf-service
+              #_#_::atom-http-service atom-http-service))))
 
 (defn start-system
   "start with (-> (create-system {}) start-system)"
@@ -115,7 +131,7 @@
 
 (defn -main []
   (->> {::conn                  (ds/create-conn tg-ds/schema)
-      ::state                 adb/state
+      #_#_::state             adb/state
       ::lacinia-pedestal-conf {:api-path "/graphql"
                                :ide-path "/graphiql"}}
      create-system

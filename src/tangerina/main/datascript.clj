@@ -68,7 +68,8 @@
   [{:tangerina.main.core/keys [conn]}]
   {:query/tasks            (fn [_ _ _]
                              (->> (tasks (ds/db conn))
-                                  (map deserialize-keys)))
+                                (map deserialize-keys)
+                                (sort-by :id)))
    :query/impl             (constantly "datascript")
    :mutation/create-task   (fn [_ {:keys [description]} _]
                              (let [id                         (ds/tempid :db.part/user)
@@ -77,8 +78,8 @@
                                                                :task/description description}
                                    {:keys [db-after tempids]} (ds/transact! conn [data])]
                                (-> data
-                                   deserialize-keys
-                                   (update :id ds/resolve-tempid db-after tempids))))
+                                  deserialize-keys
+                                  (update :id #(ds/resolve-tempid db-after tempids %)))))
    :mutation/complete-task (fn [_ {:keys [id]} _]
                              (let [{checked-bef :task/checked
                                     :as         task-bef} (first (get-task-by-id (ds/db conn) id))
@@ -91,8 +92,8 @@
                              (let [task-bef (first (get-task-by-id (ds/db conn) id))]
                                (ds/transact! conn (update-task id description))
                                (-> task-bef
-                                   deserialize-keys
-                                   (assoc :description description))))
+                                  deserialize-keys
+                                  (assoc :description description))))
    :mutation/delete-task   (fn [_ {:keys [id]} _]
                              (let [task-bef (first (get-task-by-id (ds/db conn) id))]
                                (ds/transact! conn (delete-task id))

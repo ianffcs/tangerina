@@ -1,89 +1,47 @@
 (ns tangerina.client.request-graphql
-  (:require [tangerina.client.http-driver :as http]
-            [clojure.core.async :as async]
-            #?(:clj [jsonista.core :as j])
+  (:require [cljs.core.async :as async]
+            ["graphql-request" :as gqlr]
             [com.wsscode.pathom.connect.graphql2 :as pcgql]))
 
-(defn decodejson
-  [json]
-  #?(:clj (if-not (or (empty? json) (map? json))
-            (j/read-value json (j/object-mapper {:decode-key-fn true}))
-            json)))
-
 (def graphql-app
-  {:url           "http://localhost:8888/graphql"
-   :method        :post
-   ;;:content-type  :graphql
-   #_#_:insecure? true})
+  {:url "http://localhost:8888/graphql"})
 
-(defn parserHTTPResponse
-  [req res]
-  #?(:clj  (-> res
-               :body
-               decodejson
-               :data
-               (get (get req :query-name)))
-     :cljs (-> res
-               .-data
-               (aget (name (get req :query-name)))
-               (js->clj :keywordize-keys true))))
+(defn gql-request! [url eql]
+  (let [chan    (async/promise-chan)
+        raise   (fn request-async-raise [ex]
+                  (async/put! chan (if (nil? ex)
+                                     ::nil
+                                     ex)))
+        respond (fn request-async-respond [response]
+                  (try
+                    (async/put! chan response)
+                    (catch #?(:clj  Throwable
+                              :cljs :default) e
+                      (raise e))))]
+    (-> (gqlr/request url
+                      (pcgql/query->graphql eql
+                                            {}))
+        (.then (fn [response]
+                 (respond (js->clj response :keywordize-keys true))))
+        (.catch (fn [err]
+                  (raise err))))
+    chan))
 
-(def defineTaskResp
-  [:id
-   :description
-   :completed
-   :delete])
+(defn execute! [eql]
+  (async/go
+    (->> (gql-request! (get graphql-app :url) eql)
+         async/<!)))
 
-(defn query<->mutation?
-  [query-name]
-  (if (= \: (first query-name))
-    (keyword (subs query-name 1))
-    (symbol query-name)))
+#_#_(async/go (->> `[{(createTask {:description "foi!"})
+                      [:id :checked :description]}]
+                   execute!
+                   async/<!
+                   prn))
 
-(comment
-  ((query<->mutation? ":a") => :a)
-  ((query<->mutation? "a") => 'a))
-
-(defn gqlHTTPBuilder
-  [app query-name response mapvals]
-  (let [query (query<->mutation? query-name)]
-    (-> (->> (pcgql/query->graphql `[{(~query ~mapvals)
-                                      ~response}]
-                                   {})
-             (assoc {} "query")
-             (assoc app :query-params))
-        (assoc :query-name (keyword query)))))
-
-(defn defineTask!
-  [{:keys [http-driver]} req-map]
-  (let [query "defineTask"
-        req   (gqlHTTPBuilder graphql-app
-                              query defineTaskResp (dissoc req-map :editing))]
-    (async/go
-      (->> req
-           http-driver
-           async/<!
-           (parserHTTPResponse req)))))
-
-(defn listTasks!
-  [{:keys [http-driver]} req-map]
-  (let [query ":listTasks"
-        req   (gqlHTTPBuilder graphql-app
-                              query defineTaskResp req-map)]
-    (async/go
-      (->> req
-           http-driver
-           async/<!
-           (parserHTTPResponse req)))))
-
-(comment defineTask! funciona igual no CLJ e no CLJS
-         (async/go
-           (prn (async/<! (defineTask!
-                            {:http-driver http/request-async}
-                            {:description "oi"}))))
-
-         (async/go
-           (prn (async/<! (listTasks!
-                           {:http-driver http/request-async}
-                           {}))))
-         )
+(async/go (->> [{:tasks
+                 [:id :checked :description]}]
+               execute!
+               async/<!
+               :tasks
+               (sort-by :id)
+               prn))
