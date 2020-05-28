@@ -201,7 +201,7 @@
   []
   [:<>
    [task-list! (r/cursor state [:tasks])]
-   [description-component (r/cursor state [:tasks])]])
+   [description-component {::tasks (r/cursor state [:tasks])}]])
 
 (defn main
   []
