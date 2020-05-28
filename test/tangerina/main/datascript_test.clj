@@ -4,12 +4,10 @@
             [tangerina.main.datascript :as tg-ds]
             [datascript.core :as ds]))
 
-;; TODO transactions-test
 (deftest crud-test
   (let [conn                           (doto (ds/create-conn tg-ds/schema))
-        {:keys [db-after tempids]}         (ds/transact! conn
-                                                     [;; manualmenete criando um cenário
-                                                      {:db/id            -1
+        {:keys [db-after tempids]}     (ds/transact! conn
+                                                     [{:db/id            -1
                                                        :task/description "abc"
                                                        :task/checked     false}])
         id-abc                         (ds/resolve-tempid db-after tempids -1)

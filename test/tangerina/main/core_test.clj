@@ -1,6 +1,5 @@
 (ns tangerina.main.core-test
   (:require [clj-http.client :as client]
-            #_[matcher-combinators.test :refer [match?]]
             [clojure.test :refer [testing is deftest]]
             [io.pedestal.http :as http]
             [io.pedestal.test :refer [response-for]]
@@ -84,23 +83,7 @@
              (gql env ::core/ds-http-service `[{(deleteTask {:id 1})
                                                 [:description :checked :id]}])))
       (is (= {:data {:tasks []}}
-             (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}]))))
-
-    #_#_(testing
-            "create a task in atom-impl"
-          (is (= {:data {:createTask {:description "atom"}}}
-                 (gql env ::core/atom-http-service `[{(create_task {:description "atom"})
-                                                      [:description]}]))))
-
-    (testing
-        "Fetch from both"
-      (is (= {:data {:impl  "datascript+atom"
-                     :tasks [{:checked     false
-                              :description "ds"}
-                             {:checked     false
-                              :description "atom"}]}}
-             (gql env ::core/lacinia-wtf-service `[{:tasks [:description :checked]}
-                                                   :impl]))))))
+             (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}]))))))
 
 (deftest code-quality
   (is (empty? (:findings (kondo/run! {})))))
@@ -114,18 +97,3 @@
                        (->> (hash-map :query))
                        json/write-str)}
      client/request))
-
-#_(deftest web-server
-    (testing "graphql route"
-      (let [test-atom (atom nil)
-            _start    (->> {::core/conn                  (ds/create-conn tg-ds/schema)
-                            ::core/state                 adb/state
-                            ::core/lacinia-pedestal-conf {:api-path "/graphql"
-                                                          :ide-path "/graphiql"}}
-                           core/create-system
-                           (core/start-system! test-atom))]
-        (is (match? {:body   "{\"data\":{\"create_task\":{\"description\":\"atom\"}}}",
-                     :status 200}
-                    (http-gql `[{(create_task {:description "atom"})
-                                 [:description]}])))
-        (core/stop-system @test-atom))))

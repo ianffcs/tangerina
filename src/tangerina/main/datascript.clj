@@ -1,6 +1,5 @@
 (ns tangerina.main.datascript
-  (:require [datascript.core :as ds]
-            [medley.core :as medley]))
+  (:require [datascript.core :as ds]))
 
 (def schema
   {:task/description {:valueType   :string
