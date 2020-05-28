@@ -65,10 +65,10 @@
                                                 [:description :checked :id]}]))))
 
     (testing "updating a task"
-      (is (= {:data {:updateTask {:description "alo"
-                                  :checked     true
-                                  :id          1}}}
-             (gql env ::core/ds-http-service `[{(updateTask {:id 1 :description "alo"})
+      (is (= {:data {:setDescriptionTask {:description "alo"
+                                          :checked     true
+                                          :id          1}}}
+             (gql env ::core/ds-http-service `[{(setDescriptionTask {:id 1 :description "alo"})
                                                 [:description :checked :id]}]))))
     (testing "uncompleting a task"
       (is (= {:data {:completeTask {:description "alo"

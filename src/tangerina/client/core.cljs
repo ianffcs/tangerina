@@ -27,15 +27,15 @@
          :completeTask)
       (swap! task-cursor update :checked not))))
 
-(defn update-task!
+(defn set-description-task!
   [task-cursor]
   (let [{:keys [id description]} @task-cursor]
     (async/go
-      (->> `[{(updateTask {:id ~id :description ~description})
+      (->> `[{(setDescriptionTask {:id ~id :description ~description})
             [:description :checked :id]}]
          gql/execute!
          async/<!
-         :updateTask)
+         :setDescriptionTask)
       (swap! task-cursor assoc :editing false)
       (swap! task-cursor dissoc :editing))))
 
@@ -90,14 +90,14 @@
                   :on-change    on-edition
                   :on-key-press close-edition}]])
 
-(defn update-description
+(defn set-description
   [task-cursor]
   (let [description   (:description @task-cursor)
         editing?      (:editing @task-cursor)
         on-edition    #(swap! task-cursor assoc :description (.. % -target -value))
         begin-edit    #(swap! task-cursor assoc :editing true)
         close-edition #((when (= 13 (.-charCode %))
-                          (update-task! task-cursor)))]
+                          (set-description-task! task-cursor)))]
     (if editing?
       [:span {:class "taskDescription"
               :style {:margin "3px"}}
@@ -139,7 +139,7 @@
       [:<>
        [check-task task-cursor]
        [ui-id task-cursor]       " "
-       [update-description task-cursor]
+       [set-description task-cursor]
        [delete-task task-cursor]])))
 
 (defn task-element

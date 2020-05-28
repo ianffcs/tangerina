@@ -30,19 +30,19 @@
                                             :resolve :query/impl}
                                     :tasks {:type    '(list Task)
                                             :resolve :query/tasks}}
-                        :mutations {:createTask   {:type    'Task
-                                                   :args    {:description {:type 'String}}
-                                                   :resolve :mutation/create-task}
-                                    :completeTask {:type    'Task
-                                                   :args    {:id {:type 'Int}}
-                                                   :resolve :mutation/complete-task}
-                                    :updateTask   {:type    'Task
-                                                   :args    {:id          {:type 'Int}
-                                                             :description {:type 'String}}
-                                                   :resolve :mutation/update-task}
-                                    :deleteTask   {:type    'Task
-                                                   :args    {:id {:type 'Int}}
-                                                   :resolve :mutation/delete-task}}}
+                        :mutations {:createTask         {:type    'Task
+                                                         :args    {:description {:type 'String}}
+                                                         :resolve :mutation/create-task}
+                                    :completeTask       {:type    'Task
+                                                         :args    {:id {:type 'Int}}
+                                                         :resolve :mutation/complete-task}
+                                    :setDescriptionTask {:type    'Task
+                                                         :args    {:id          {:type 'Int}
+                                                                   :description {:type 'String}}
+                                                         :resolve :mutation/set-description-task}
+                                    :deleteTask         {:type    'Task
+                                                         :args    {:id {:type 'Int}}
+                                                         :resolve :mutation/delete-task}}}
         ds-gql-schema  (-> lacinia-schema
                           (attach-resolvers (tg-ds/datascript-impl {::conn conn}))
                           lacinia.schema/compile)
