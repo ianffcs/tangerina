@@ -1,4 +1,4 @@
 (ns shadow.user
-  (:require [user :as u]))
+  (:require [user :refer :all]))
 
 ;(u/-main)
