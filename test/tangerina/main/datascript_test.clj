@@ -11,7 +11,7 @@
                                                             :task/description "abc"
                                                             :task/checked     false}])
         id-abc                              (ds/resolve-tempid db-after tempids -1)
-        {db-complete-task :db-after}        (ds/transact! conn (tg-ds/complete-task id-abc))
+        {db-check-task :db-after}           (ds/transact! conn (tg-ds/check-task id-abc))
         {db-create-task  :db-after
          tempids-created :tempids}          (->> [["ola" -2] ["hello" -3]]
                                                (mapcat (fn [[desc tempid]]
@@ -23,8 +23,8 @@
                                                (mapcat (fn [[id desc]]
                                                          (tg-ds/set-description-task id desc)))
                                                (ds/transact! conn))
-        {db-uncomplete-task :db-after}      (->> [id-hello id-abc]
-                                               (mapcat tg-ds/uncomplete-task)
+        {db-uncheck-task :db-after}         (->> [id-hello id-abc]
+                                               (mapcat tg-ds/uncheck-task)
                                                (ds/transact! conn))
         {db-delete-task :db-after}          (->> [id-hello id-abc]
                                                (mapcat tg-ds/delete-task)
@@ -34,7 +34,7 @@
       (is (match? [{:db/id            id-abc
                     :task/checked     true
                     :task/description "abc"}]
-                  (tg-ds/tasks db-complete-task))))
+                  (tg-ds/tasks db-check-task))))
     (testing
         "A task ola and hello created and appearing in tasks?"
       (is (match? [{:db/id            3
@@ -58,7 +58,7 @@
       (is (match? [{:db/id 3, :task/checked false, :task/description "hello"}
                    {:db/id 2, :task/checked false, :task/description "alo"}
                    {:db/id 1, :task/checked false, :task/description "ioa"}]
-                  (tg-ds/tasks db-uncomplete-task))))
+                  (tg-ds/tasks db-uncheck-task))))
 
     (testing "delete tasks 1 and 2"
       (is (match? [{:db/id 2, :task/checked false, :task/description "alo"}]

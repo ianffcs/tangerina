@@ -32,6 +32,60 @@
     (->> (gql-request! (get graphql-app :url) eql)
          async/<!)))
 
+(defn insert-tasks! [tasks description]
+  (async/go
+    (let [inserted (->> `[{(createTask {:description ~description})
+                         [:id :checked :description]}]
+                      execute!
+                      async/<!
+                      :createTask)]
+      (swap! tasks conj inserted))))
+
+(defn check-task!
+  [task-cursor]
+  (let [{:keys [id]} @task-cursor]
+    (async/go
+      (->> `[{(checkTask {:id ~id})
+              [:id :checked :description]}]
+           execute!
+           async/<!
+           :completeTask)
+      (swap! task-cursor update :checked not))))
+
+(defn set-description-task!
+  [task-cursor]
+  (let [{:keys [id description]} @task-cursor]
+    (async/go
+      (->> `[{(setDescriptionTask {:id ~id :description ~description})
+            [:description :checked :id]}]
+         execute!
+         async/<!
+         :setDescriptionTask)
+      (swap! task-cursor assoc :editing false)
+      (swap! task-cursor dissoc :editing))))
+
+(defn delete-task!
+  [task-cursor]
+  (let [{:keys [id]} @task-cursor]
+    (async/go
+      (->> `[{(deleteTask {:id ~id})
+            [:id :checked :description]}]
+         execute!
+         async/<!
+         :deleteTask)
+      (swap! task-cursor update :delete not))))
+
+(defn get-all-tasks! [tasks]
+  (async/go
+    (let [tasks-return (->> `[{:tasks
+                             [:id :checked :description]}]
+                          execute!
+                          async/<!
+                          :tasks
+                          (sort-by (comp int :id))
+                          vec)]
+      (reset! tasks tasks-return))))
+
 #_(async/go (->> `[{(createTask {:description "foi!"})
                     [:id :checked :description]}]
                  execute!

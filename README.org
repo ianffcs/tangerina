@@ -1,0 +1,21 @@
+* TODO-APP Clojure + Clojurescript (Reagent)
+** Serviço Backend
+1. Servidor Web que serve uma rota com uma API GraphQL e uma rota com o
+   frontend em Clojurescript.
+2. o Banco de dados que persiste os dados do servidor web é um banco de dado
+   em memória feito em Clj/Cljs
+*** Mostrar
+ 1. Banco de dados em memória impl de tarefas
+  - Testes no Datascript
+  - comentar Implementação
+ 2. GraphQL
+  - Testes do GraphQL com EQL
+  - Mostrar Impl
+** Serviço frontend
+ 1. Clojurescript Reagent que se comunica com o backend em graphql
+ 2. A comunicação com o Backend é feita com graphql-request, core.async e pathom
+* How to run
+** with clj tools.deps
+#+BEGIN_SRC sh
+clj -A:cljs:dev:test -e "(-main)"
+#+END_SRC

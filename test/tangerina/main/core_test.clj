@@ -58,10 +58,10 @@
                               :id          1}]}}
              (gql env ::core/ds-http-service `[{:tasks [:description :checked :id]}]))))
     (testing "completing a task"
-      (is (= {:data {:completeTask {:description "ds"
-                                    :checked     true
-                                    :id          1}}}
-             (gql env ::core/ds-http-service `[{(completeTask {:id 1})
+      (is (= {:data {:checkTask {:description "ds"
+                                 :checked     true
+                                 :id          1}}}
+             (gql env ::core/ds-http-service `[{(checkTask {:id 1})
                                                 [:description :checked :id]}]))))
 
     (testing "updating a task"
@@ -71,10 +71,10 @@
              (gql env ::core/ds-http-service `[{(setDescriptionTask {:id 1 :description "alo"})
                                                 [:description :checked :id]}]))))
     (testing "uncompleting a task"
-      (is (= {:data {:completeTask {:description "alo"
-                                    :checked     false
-                                    :id          1}}}
-             (gql env ::core/ds-http-service `[{(completeTask {:id 1})
+      (is (= {:data {:checkTask {:description "alo"
+                                 :checked     false
+                                 :id          1}}}
+             (gql env ::core/ds-http-service `[{(checkTask {:id 1})
                                                 [:description :checked :id]}]))))
     (testing "deleting a task"
       (is (= {:data {:deleteTask {:description "alo"

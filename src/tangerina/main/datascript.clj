@@ -15,11 +15,11 @@
    [[:db/add tempid :task/description description]
     [:db/add tempid :task/checked false]]))
 
-(defn uncomplete-task
+(defn uncheck-task
   [id]
   [[:db/add id :task/checked false]])
 
-(defn complete-task
+(defn check-task
   [id]
   [[:db/add id :task/checked true]])
 
@@ -79,12 +79,12 @@
                                       (-> data
                                          deserialize-keys
                                          (update :id #(ds/resolve-tempid db-after tempids %)))))
-   :mutation/complete-task        (fn [_ {:keys [id]} _]
+   :mutation/check-task           (fn [_ {:keys [id]} _]
                                     (let [{checked-bef :task/checked
                                            :as         task-bef} (first (get-task-by-id (ds/db conn) id))
                                           checking-data          (if checked-bef
-                                                                   (uncomplete-task id)
-                                                                   (complete-task id))]
+                                                                   (uncheck-task id)
+                                                                   (check-task id))]
                                       (ds/transact! conn checking-data)
                                       (deserialize-keys (update task-bef :task/checked not))))
    :mutation/set-description-task (fn [_ {:keys [id description]} _]

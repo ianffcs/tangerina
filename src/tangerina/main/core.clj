@@ -18,36 +18,36 @@
 (def front-route
   #{["/index" :get index :route-name ::index]})
 
+(def lacinia-schema
+  {:objects   {:Task {:fields {:id          {:type 'Int}
+                               :checked     {:type 'Boolean}
+                               :description {:type 'String}}}}
+   :queries   {:impl  {:type    'String
+                       :resolve :query/impl}
+               :tasks {:type    '(list Task)
+                       :resolve :query/tasks}}
+   :mutations {:createTask         {:type    'Task
+                                    :args    {:description {:type 'String}}
+                                    :resolve :mutation/create-task}
+               :checkTask          {:type    'Task
+                                    :args    {:id {:type 'Int}}
+                                    :resolve :mutation/check-task}
+               :setDescriptionTask {:type    'Task
+                                    :args    {:id          {:type 'Int}
+                                              :description {:type 'String}}
+                                    :resolve :mutation/set-description-task}
+               :deleteTask         {:type    'Task
+                                    :args    {:id {:type 'Int}}
+                                    :resolve :mutation/delete-task}}})
+
 (defn create-system
   [{::keys [conn
             state
             lacinia-pedestal-conf]
     :as    env}]
-  (let [lacinia-schema {:objects   {:Task {:fields {:id          {:type 'Int}
-                                                    :checked     {:type 'Boolean}
-                                                    :description {:type 'String}}}}
-                        :queries   {:impl  {:type    'String
-                                            :resolve :query/impl}
-                                    :tasks {:type    '(list Task)
-                                            :resolve :query/tasks}}
-                        :mutations {:createTask         {:type    'Task
-                                                         :args    {:description {:type 'String}}
-                                                         :resolve :mutation/create-task}
-                                    :completeTask       {:type    'Task
-                                                         :args    {:id {:type 'Int}}
-                                                         :resolve :mutation/complete-task}
-                                    :setDescriptionTask {:type    'Task
-                                                         :args    {:id          {:type 'Int}
-                                                                   :description {:type 'String}}
-                                                         :resolve :mutation/set-description-task}
-                                    :deleteTask         {:type    'Task
-                                                         :args    {:id {:type 'Int}}
-                                                         :resolve :mutation/delete-task}}}
-        ds-gql-schema  (-> lacinia-schema
-                          (attach-resolvers (tg-ds/datascript-impl {::conn conn}))
-                          lacinia.schema/compile)
-
-        ds-http-service (-> ds-gql-schema
+  (let [ds-http-service (-> lacinia-schema
+                           (attach-resolvers (tg-ds/datascript-impl {::conn conn}))
+                           lacinia.schema/compile
                            (lp/default-service lacinia-pedestal-conf)
                            (update ::http/routes into front-route)
                            (assoc ::http/resource-path "public"

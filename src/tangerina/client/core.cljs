@@ -2,71 +2,16 @@
   (:require [reagent.core :as r]
             [reagent.dom :as dom]
             [tangerina.client.request-graphql :as gql]
-            [clojure.core.async :as async]
             [clojure.string :as string]))
 
 (def state (r/atom {:tasks :state/pending}))
-
-(defn insert-tasks! [tasks description]
-  (async/go
-    (let [inserted (->> `[{(createTask {:description ~description})
-                         [:id :checked :description]}]
-                      gql/execute!
-                      async/<!
-                      :createTask)]
-      (swap! tasks conj inserted))))
-
-(defn check-task!
-  [task-cursor]
-  (let [{:keys [id]} @task-cursor]
-    (async/go
-      (->> `[{(completeTask {:id ~id})
-            [:id :checked :description]}]
-         gql/execute!
-         async/<!
-         :completeTask)
-      (swap! task-cursor update :checked not))))
-
-(defn set-description-task!
-  [task-cursor]
-  (let [{:keys [id description]} @task-cursor]
-    (async/go
-      (->> `[{(setDescriptionTask {:id ~id :description ~description})
-            [:description :checked :id]}]
-         gql/execute!
-         async/<!
-         :setDescriptionTask)
-      (swap! task-cursor assoc :editing false)
-      (swap! task-cursor dissoc :editing))))
-
-(defn delete-task!
-  [task-cursor]
-  (let [{:keys [id]} @task-cursor]
-    (async/go
-      (->> `[{(deleteTask {:id ~id})
-            [:id :checked :description]}]
-         gql/execute!
-         async/<!
-         :deleteTask)
-      (swap! task-cursor update :delete not))))
-
-(defn get-all-tasks! [tasks]
-  (async/go
-    (let [tasks-return (->> `[{:tasks
-                             [:id :checked :description]}]
-                          gql/execute!
-                          async/<!
-                          :tasks
-                          (sort-by (comp int :id))
-                          vec)]
-      (reset! tasks tasks-return))))
 
 (defn check-task [task-cursor]
   (let [checkbox       (r/atom false)
         completed?     (:checked @task-cursor)
         checking       (if completed? "on" "off")
         check-checkbox #(swap! checkbox not)
-        on-completion  #(check-task! task-cursor)
+        on-completion  #(gql/check-task! task-cursor)
         input-props    {:type      "checkbox"
                         :value     true
                         :checked   checking
@@ -100,7 +45,7 @@
         on-edition    #(swap! task-cursor assoc :description (.. % -target -value))
         begin-edit    #(swap! task-cursor assoc :editing true)
         close-edition #(when-not (string/blank? description)
-                         (set-description-task! task-cursor))]
+                         (gql/set-description-task! task-cursor))]
     (if editing?
       [:span {:class "taskDescription"
               :style {:margin "3px"}}
@@ -115,7 +60,7 @@
 (defn delete-task
   [task-cursor]
   (let [delete      (:delete @task-cursor)
-        on-deletion #(delete-task! task-cursor)]
+        on-deletion #(gql/delete-task! task-cursor)]
     (if delete
       []
       [:span {:class "taskDeletion"}
@@ -161,7 +106,7 @@
   [tasks]
   (if (tasks-loading? tasks)
     (do
-      (get-all-tasks! tasks)
+      (gql/get-all-tasks! tasks)
       "loading")
     (doall (map
             #(task-element (r/cursor tasks [%])) (range (count @tasks))))))
@@ -175,10 +120,9 @@
   [{::keys [on-description
             description
             on-submit]}]
-  [:form {:on-submit #(do
-                        (.preventDefault %)
-                        (when on-submit
-                          (on-submit %)))}
+  [:form {:on-submit #(do (.preventDefault %)
+                          (when on-submit
+                            (on-submit %)))}
    [:label
     "Description:"
     [:input {:value    description
@@ -193,9 +137,8 @@
       (let [current-description @description
             on-description      #(reset! description %)
             on-submit           (when-not (string/blank? current-description)
-                                  #(do
-                                     (insert-tasks! tasks current-description)
-                                     (on-description "")))]
+                                  #(do (gql/insert-tasks! tasks current-description)
+                                       (on-description "")))]
         [ui-description-component {::on-description on-description
                                    ::description    current-description
                                    ::on-submit      on-submit}]))))
