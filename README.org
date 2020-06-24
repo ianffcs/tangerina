@@ -1,20 +1,26 @@
 * TODO-APP Clojure + Clojurescript (Reagent)
-** Serviço Backend
-1. Servidor Web que serve uma rota com uma API GraphQL e uma rota com o
-   frontend em Clojurescript.
-2. o Banco de dados que persiste os dados do servidor web é um banco de dado
-   em memória feito em Clj/Cljs
-*** Mostrar
- 1. Banco de dados em memória impl de tarefas
-  - Testes no Datascript
-  - comentar Implementação
- 2. GraphQL
-  - Testes do GraphQL com EQL
-  - Mostrar Impl
-** Serviço frontend
- 1. Clojurescript Reagent que se comunica com o backend em graphql
- 2. A comunicação com o Backend é feita com graphql-request, core.async e pathom
+** Backend [[file:src/tangerina/main/][main]] && [[file:test/tangerina/main/][main-test]]
+Web server that serves an api route with GraphQL and a route with frontend on
+[[file:resources/public/index.html][./public/index.html]], possibly on future some REST routes.
+*** Graphql Layer with lacinia
+1. Lacinia API described by the schema on [[file:src/tangerina/main/core.clj][core.clj]] and with their impl.
+2. Datascript DB impl on [[file:src/tangerina/main/datascript.clj][datascript.clj]] that exposes a Lacinia interface to queries and mutations
+   to use.
+**** TODO reimplement the interface in lacinia for a in-memory db in [[file:src/tangerina/main/atom_db.clj][atom_db.clj]]
+*** To Show
+**** Datascript Tests and Impl.
+**** Lacinia interface to GraphQL with EQL, show Tests and Impl.
+** Frontend
+Clojurescript front ends, reagent is served on [[http://localhost:8888/index][index]] that make requests on graphql
+backend, possibly on Rest in the future
+*** To Show
+**** graphql-request + pathom interface on frontend to communicate with backend
+***** TODO make tests on this interface
+**** Reagent Impl
+***** TODO make ui-tests using etaoin
 * How to run
+After startint the application, the backend api is exposed on [[http://localhost:8888/graphql][graphql]] or on
+[[http://localhost:8888/graphiql][graphiql]] and the frontend is on [[http://localhost:8888/index][index]].
 ** with clj tools.deps
 #+BEGIN_SRC sh
 clj -A:cljs:dev:test -e "(-main)"
