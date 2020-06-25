@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [reagent.dom :as dom]
             [tangerina.client.request-graphql :as gql]
+            [clojure.core.async :as async]
             [clojure.string :as string]))
 
 (def state (r/atom {:tasks :state/pending}))
@@ -105,11 +106,17 @@
 (defn ui-tasks-list
   [tasks]
   (if (tasks-loading? tasks)
-    (do
-      (gql/get-all-tasks! tasks)
+    (let [req (gql/execute! `[{:tasks [:id :checked :description]}])]
+      (async/go
+        (->> (async/<! req)
+             :tasks
+             (sort-by :id)
+             vec
+             (reset! tasks))
+        (gql/get-all-tasks! tasks))
       "loading")
     (doall (map
-            #(task-element (r/cursor tasks [%])) (range (count @tasks))))))
+             #(task-element (r/cursor tasks [%])) (range (count @tasks))))))
 
 (defn task-list!
   [tasks]
