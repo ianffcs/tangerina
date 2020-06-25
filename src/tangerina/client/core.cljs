@@ -59,17 +59,16 @@
                           ::begin-edit  begin-edit}]])))
 
 (defn delete-task
-  [task-cursor]
-  (let [delete      (:delete @task-cursor)
-        on-deletion #(gql/delete-task! task-cursor)]
-    (if delete
-      []
-      [:span {:class "taskDeletion"}
-       [:input {:type     "button"
-                :value    "❌"
-                :on-click on-deletion}]])))
+  [{:keys [delete on-deletion]}]
+  (if delete
+    []
+    [:span {:class "taskDeletion"}
+     [:input {:type     "button"
+              :value    "❌"
+              :on-click on-deletion}]]))
 
-(defn ui-id [task-cursor]
+(defn ui-id
+  [{:keys [id]}]
   [:span {:class "taskId"
           :style {:background-color "rgba(120, 50, 50, 0.63)"
                   :border-radius    "50px"
@@ -78,25 +77,30 @@
                   :margin           "3px"
                   :padding          "3px 2px"
                   :text-align       "center"}}
-   (:id @task-cursor)])
+   id])
 
 (defn task-template
   [task-cursor]
-  (let [delete (:delete @task-cursor)]
+  (let [{:keys [delete id] :as task} @task-cursor
+        on-deletion (fn []
+                      ;; otimist update
+                      (swap! task-cursor assoc :delete true)
+                      (gql/execute! `[{(deleteTask {:id ~id})
+                                       [:id :checked :description]}]))]
     (if delete
       [:<>]
       [:<>
        [check-task task-cursor]
-       [ui-id task-cursor]       " "
+       [ui-id task] " "
        [set-description task-cursor]
-       [delete-task task-cursor]])))
+       [delete-task (assoc task
+                      :on-deletion on-deletion)]])))
 
 (defn task-element
   [task-cursor]
-  (let [id         (:id @task-cursor)
-        completed? (:checked @task-cursor)]
+  (let [{:keys [checked id]} @task-cursor]
     [:div {:key id}
-     (if completed?
+     (if checked
        [:div [:strike (task-template task-cursor)]]
        [:div (task-template task-cursor)])]))
 
