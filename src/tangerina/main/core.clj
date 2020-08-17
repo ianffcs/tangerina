@@ -1,22 +1,12 @@
 (ns tangerina.main.core
   (:require
    [clojure.java.io :as io]
-   [com.walmartlabs.lacinia.util :refer [attach-resolvers]]
+   [com.walmartlabs.lacinia.util :as lacinia-util]
    [com.walmartlabs.lacinia.schema :as lacinia.schema]
    [com.walmartlabs.lacinia.pedestal2 :as lp]
    [io.pedestal.http :as http]
    [tangerina.main.datascript :as tg-ds]
    [datascript.core :as ds]))
-
-(def ^:private idx-html (slurp (io/resource "public/index.html")))
-
-(defn index [_]
-  {:status  200
-   :body    idx-html
-   :headers {"Content-Type" "text/html"}})
-
-(def front-route
-  #{["/index" :get index :route-name ::index]})
 
 (def lacinia-schema
   {:objects   {:Task {:fields {:id          {:type 'Int}
@@ -40,56 +30,67 @@
                                     :args    {:id {:type 'Int}}
                                     :resolve :mutation/delete-task}}})
 
+(def ^:private idx-html (slurp (io/resource "public/index.html")))
+
+(defn index [_]
+  {:status  200
+   :body    idx-html
+   :headers {"Content-Type" "text/html"}})
+
+(defn routes [{:keys [app-context
+                      api-path
+                      ide-path
+                      asset-path]
+               :as   options} compiled-schema]
+  (into #{[api-path :post (lp/default-interceptors compiled-schema app-context)
+           :route-name ::graphql-api]
+          [ide-path :get (lp/graphiql-ide-handler options)
+           :route-name ::graphiql-ide]
+          ["/index" :get index :route-name ::index]}
+        (lp/graphiql-asset-routes asset-path)))
+
 (defn create-system
   [{::keys [conn
-            state
-            lacinia-pedestal-conf]
-    :as    env}]
-  (let [ds-http-service (-> lacinia-schema
-                           (attach-resolvers (tg-ds/datascript-impl {::conn conn}))
-                           lacinia.schema/compile
-                           (lp/default-service lacinia-pedestal-conf)
-                           (update ::http/routes into front-route)
-                           (assoc ::http/resource-path "public"
-                                  ::http/file-path "target/public")
-                           (assoc ::http/port 8888))]
-    (-> env
-       (assoc ::conn conn
-              ::state state
-              ::http-services [::ds-http-service]
-              ::ds-http-service ds-http-service))))
-
-(defn start-system
-  "start with (-> (create-system {}) start-system)"
-  [{::keys [http-services]
-    :as    env}]
-  (reduce
-   (fn [acc k]
-     (update acc k #(-> %
-                       http/create-server
-                       http/start)))
-   env http-services))
-
-(defn stop-system
-  [{::keys [http-services]
-    :as    env}]
-  (reduce
-   (fn [acc k]
-     (update acc k #(some-> %
-                            http/stop)))
-   env http-services))
+            state]
+    :as    config-map}]
+  (let [ds-http-compiled (-> lacinia-schema
+                             (lacinia-util/attach-resolvers
+                              (tg-ds/datascript-impl {::conn conn}))
+                             lacinia.schema/compile)]
+    (-> config-map
+        (assoc ::conn conn
+               ::state state
+               ::http/routes (routes config-map ds-http-compiled)
+               ;; "Disables secure headers in the service map,
+               ;;  a prerequisite for GraphiQL requests to operate."
+               ::http/secure-headers nil)
+        ;; TODO enable subscriptions
+        #_(lp/enable-subscriptions ds-http-compiled config-map)
+        http/create-server)))
 
 (defonce sys-state (atom nil))
 
-(defn start-system! [sys-state system]
-  (reset! sys-state (start-system system)))
+(defn start-system! [system-map]
+  (reset! sys-state (http/start system-map)))
 
-(defn stop-system! [sys-state]
-  (stop-system @sys-state))
+(defn stop-system! []
+  (swap! sys-state http/stop))
+
+(def config-map
+  {:api-path            "/graphql"
+   :ide-path            "/graphiql"
+   :asset-path          "/assets/graphiql"
+   :subscriptions-path  "/ws"
+   :env                 :dev
+   :app-context         {}
+   ::conn               (ds/create-conn tg-ds/schema)
+   ::http/resource-path "public"
+   ::http/file-path     "target/public"
+   ::http/port          8888
+   ::http/type          :jetty
+   ::http/join?         false})
 
 (defn -main []
-  (->> {::conn                  (ds/create-conn tg-ds/schema)
-      ::lacinia-pedestal-conf {:api-path "/graphql"
-                               :ide-path "/graphiql"}}
-     create-system
-     (start-system! sys-state)))
+  (-> config-map
+      create-system
+      start-system!))
