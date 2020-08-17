@@ -22,7 +22,8 @@
 
          ;; dbs
          ;; TODO use another dbs
-         datascript {:mvn/version "0.18.13"}
+         datascript            {:mvn/version "0.18.13"}
+         com.datomic/dev-local {:mvn/version "0.9.184"}
          ;; io.replikativ/datahike {:mvn/version "0.2.1"}
          ;; juxt/crux-core         {:mvn/version "19.09-1.4.0-alpha"}
 
