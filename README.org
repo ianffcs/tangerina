@@ -25,3 +25,7 @@ After startint the application, the backend api is exposed on [[http://localhost
 #+BEGIN_SRC sh
 clj -A:cljs:dev:test -e "(-main)"
 #+END_SRC
+** or build the jar
+#+BEGIN_SRC sh
+npm install --save-dev && npx shadow-cljs release :todo-mvc && clj -A:build && java -jar  tangerina.jar
+#+END_SRC

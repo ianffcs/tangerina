@@ -68,7 +68,7 @@
 
            :build {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
                    :main-opts  ["-m" "hf.depstar.uberjar"
-                                "backend.jar"
+                                "tangerina.jar"
                                 "-C"
                                 "-m"
                                 "tangerina.main.core"]}
