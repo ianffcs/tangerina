@@ -1,4 +1,5 @@
 (ns tangerina.main.core
+  (:gen-class)
   (:require
    [clojure.java.io :as io]
    [com.walmartlabs.lacinia.util :refer [attach-resolvers]]
