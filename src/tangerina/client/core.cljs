@@ -151,11 +151,11 @@
 
 (defn main
   []
-  (.log js/console "aaa")
+  (.log js/console "b")
   (dom/render
    [index]
    (.getElementById js/document "app")))
 
-(defn after-load
+(defn ^:dev/after-load after-load
   []
   (main))

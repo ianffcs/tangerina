@@ -1,7 +1,5 @@
 {:deps   {:aliases [:cljs]}
- :builds {:todo-mvc {:target           :browser
-                     :output-dir       "resources/public"
-                     :asset-path       "."
-                     :compiler-options {:source-map true}
-                     :modules          {:main {:init-fn tangerina.client.core/main}}
-                     :devtools         {:after-load tangerina.client.core/after-load}}}}
+ :builds {:todo-mvc {:target     :browser
+                     :output-dir "resources/public"
+                     :asset-path "."
+                     :modules    {:main {:init-fn tangerina.client.core/main}}}}}
