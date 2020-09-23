@@ -67,8 +67,8 @@
   (reduce
    (fn [acc k]
      (update acc k #(-> %
-                       http/create-server
-                       http/start)))
+                        http/create-server
+                        http/start)))
    env http-services))
 
 (defn stop-system
@@ -90,7 +90,7 @@
 
 (defn -main []
   (->> {::conn                  (ds/create-conn tg-ds/schema)
-      ::lacinia-pedestal-conf {:api-path "/graphql"
-                               :ide-path "/graphiql"}}
-     create-system
-     (start-system! sys-state)))
+        ::lacinia-pedestal-conf {:api-path "/graphql"
+                                 :ide-path "/graphiql"}}
+       create-system
+       #_(start-system! sys-state)))
