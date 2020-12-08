@@ -18,12 +18,12 @@
          ;; middleware of routing
          com.walmartlabs/lacinia-pedestal {:mvn/version "0.14.0-alpha-1"}
          com.walmartlabs/lacinia          {:mvn/version "0.37.0-alpha-1"}
-         com.wsscode/pathom               {:mvn/version "2.3.0-alpha9"}
+         com.wsscode/pathom               {:mvn/version "2.3.0-alpha17"}
 
          ;; dbs
          ;; TODO use another dbs
          datascript            {:mvn/version "0.18.13"}
-         com.datomic/dev-local {:mvn/version "0.9.184"}
+         com.datomic/dev-local {:mvn/version "0.9.203"}
          ;; io.replikativ/datahike {:mvn/version "0.2.1"}
          ;; juxt/crux-core         {:mvn/version "19.09-1.4.0-alpha"}
 
@@ -39,8 +39,8 @@
          ;;                        :sha     "85815f409b149d237b542fd64f134747df71100d"}
          }
 
- :aliases {:cljs {:extra-deps {thheller/shadow-cljs {:mvn/version "2.9.8"}
-                               reagent/reagent      {:mvn/version "1.0.0-alpha2"}
+ :aliases {:cljs {:extra-deps {reagent/reagent      {:mvn/version "1.0.0-alpha2"}
+                               thheller/shadow-cljs {:mvn/version "2.11.4"}
                                ;;reagent-forms        {:mvn/version "0.5.44"}
                                ;;re-frame               {:mvn/version "1.0.0-rc2"}
                                ;;rum                    {:mvn/version "0.11.5"}
@@ -66,6 +66,13 @@
 
            :kaocha {:main-opts ["-m" "kaocha.runner"
                                 "--plugin" "cloverage"]}
+
+           :build {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
+                   :main-opts  ["-m" "hf.depstar.uberjar"
+                                "tangerina.jar"
+                                "-C"
+                                "-m"
+                                "tangerina.main.core"]}
 
            :lint {:extra-deps {clj-kondo {:mvn/version "2020.05.10-SNAPSHOT"}}
                   :main-opts  ["-m" "clj-kondo.main" "--lint" "src:test"]}}}
