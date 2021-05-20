@@ -21,11 +21,15 @@ backend, possibly on Rest in the future
 * How to run
 After startint the application, the backend api is exposed on [[http://localhost:8888/graphql][graphql]] or on
 [[http://localhost:8888/graphiql][graphiql]] and the frontend is on [[http://localhost:8888/index][index]].
-** with clj tools.deps
+** with dev repl
 #+BEGIN_SRC sh
-clj -A:cljs:dev:test -e "(-main)"
+shadow-cljs -A:test watch todo-mvc
+#+END_SRC
+** with dev env
+#+BEGIN_SRC sh
+clj -A:test -X:dev
 #+END_SRC
 ** or build the jar
 #+BEGIN_SRC sh
-npm install --save-dev && npx shadow-cljs release :todo-mvc && clj -A:build && java -jar  tangerina.jar
+clj -X:build-cljs  && clj -X:build
 #+END_SRC
