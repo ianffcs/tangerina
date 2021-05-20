@@ -23,13 +23,13 @@ After startint the application, the backend api is exposed on [[http://localhost
 [[http://localhost:8888/graphiql][graphiql]] and the frontend is on [[http://localhost:8888/index][index]].
 ** with dev repl
 #+BEGIN_SRC sh
-shadow-cljs -A:test watch todo-mvc
+npm install && shadow-cljs -A:test watch todo-mvc
 #+END_SRC
 ** with dev env
 #+BEGIN_SRC sh
-clj -A:test -X:dev
+npm install && clj -A:test -X:dev
 #+END_SRC
 ** or build the jar
 #+BEGIN_SRC sh
-clj -X:build-cljs  && clj -X:build
+npm install && clj -X:build-cljs  && clj -X:build
 #+END_SRC
