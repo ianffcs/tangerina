@@ -1,77 +1,74 @@
-{:paths ["src" "resources"]
- :deps  {org.clojure/clojure {:mvn/version "1.10.1"}
+{:paths   ["src" "resources"]
+ :deps    {org.clojure/clojure                 {:mvn/version "1.10.3"}
 
-         ;; TODO componentization
-         ;;juxt/clip                  {:mvn/version "0.11.0"}
-         ;; TODO use Enzzo components dependency summon (?)
-         ;; com.stuartsierra/component {:mvn/version "1.0.0"}
-         ;; integrant                  {:mvn/version "0.8.0"}
-         ;; mount     {:mvn/version "0.1.16"}
+           ;; TODO componentization
+           ;; juxt/clip                  {:mvn/version "0.11.0"}
+           ;; com.stuartsierra/component {:mvn/version "1.0.0"}
+           ;; integrant/integrant                  {:mvn/version "0.8.0"}
+           ;; mount/mount     {:mvn/version "0.1.16"}
 
-         ;; web server
-         ;; TODO use another web servers
-         io.pedestal/pedestal.service     {:mvn/version "0.5.8"}
-         io.pedestal/pedestal.log         {:mvn/version "0.5.8"}
-         io.pedestal/pedestal.interceptor {:mvn/version "0.5.8"}
-         io.pedestal/pedestal.route       {:mvn/version "0.5.8"}
+           ;; web server
+           ;; TODO use another web servers
+           io.pedestal/pedestal.service        {:mvn/version "0.5.8"}
+           io.pedestal/pedestal.log            {:mvn/version "0.5.8"}
+           io.pedestal/pedestal.interceptor    {:mvn/version "0.5.8"}
+           io.pedestal/pedestal.route          {:mvn/version "0.5.8"}
 
-         ;; middleware of routing
-         com.walmartlabs/lacinia-pedestal {:mvn/version "0.14.0-alpha-1"}
-         com.walmartlabs/lacinia          {:mvn/version "0.37.0-alpha-1"}
-         com.wsscode/pathom               {:mvn/version "2.3.0-alpha9"}
+           ;; middleware of routing
+           com.walmartlabs/lacinia-pedestal    {:mvn/version "0.14.0-alpha-1"}
+           com.walmartlabs/lacinia             {:mvn/version "0.37.0-alpha-1"}
+           com.wsscode/pathom                  {:mvn/version "2.3.1"}
 
-         ;; dbs
-         ;; TODO use another dbs
-         datascript {:mvn/version "0.18.13"}
-         ;; io.replikativ/datahike {:mvn/version "0.2.1"}
-         ;; juxt/crux-core         {:mvn/version "19.09-1.4.0-alpha"}
+           ;; dbs
+           ;; TODO use another dbs
+           datascript/datascript               {:mvn/version "0.18.13"}
+           ;; io.replikativ/datahike {:mvn/version "0.2.1"}
+           ;; juxt/crux-core         {:mvn/version "19.09-1.4.0-alpha"}
 
 
-         ;;backend http client
-         clj-http         {:mvn/version "3.10.1"}
-         metosin/jsonista {:mvn/version "0.2.6"}
+           ;;backend http client
+           clj-http/clj-http                   {:mvn/version "3.10.1"}
+           metosin/jsonista                    {:mvn/version "0.2.6"}
 
-         ;; helpers
-         medley            {:mvn/version "1.3.0"}
-         camel-snake-kebab {:mvn/version "0.4.1"}
-         ;;br.com.souenzzo/eql-as {:git/url "https://github.com/souenzzo/eql-as.git"
-         ;;                        :sha     "85815f409b149d237b542fd64f134747df71100d"}
-         }
+           ;; helpers
+           medley/medley                       {:mvn/version "1.3.0"}
+           camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.1"}
 
- :aliases {:cljs {:extra-deps {reagent/reagent      {:mvn/version "1.0.0-alpha2"}
-                               thheller/shadow-cljs {:mvn/version "2.11.4"}
-                               ;;reagent-forms        {:mvn/version "0.5.44"}
-                               ;;re-frame               {:mvn/version "1.0.0-rc2"}
-                               ;;rum                    {:mvn/version "0.11.5"}
-                               ;;com.fulcrologic/fulcro {:mvn/version "3.2.8"}
-                               }}
+           ;; cljs
+           reagent/reagent                     {:mvn/version "1.0.0"}
+           thheller/shadow-cljs                {:mvn/version "2.13.0"}}
 
+
+ :aliases {:build-cljs {:exec-fn core/release}
            :dev {:extra-paths ["dev"]
-                 :extra-deps  {org.clojure/tools.namespace {:mvn/version "0.3.1"}}}
+                 :exec-fn user/-main}
+           :test       {:extra-paths ["test" "resources"]
+                        :extra-deps  {clj-kondo/clj-kondo           {:mvn/version "RELEASE"}
+                                      lambdaisland/kaocha           {:mvn/version "1.0.632"}
+                                      lambdaisland/kaocha-cloverage {:mvn/version "1.0-45"}
+                                      lambdaisland/kaocha-cljs      {:mvn/version "0.0-71"}
+                                      nubank/matcher-combinators    {:mvn/version "1.5.2"}}}
 
-           :test {:extra-paths ["test" "resources"]
-                  :extra-deps  {org.clojure/test.check        {:mvn/version "0.9.0"}
-                                clj-kondo/clj-kondo           {:mvn/version "2020.05.09"}
-                                lambdaisland/kaocha           {:mvn/version "1.0.632"}
-                                lambdaisland/kaocha-cloverage {:mvn/version "1.0-45"}
-                                lambdaisland/kaocha-cljs      {:mvn/version "0.0-71"}
-                                nubank/matcher-combinators    {:mvn/version "1.5.2"}}}
+           :ancient    {:extra-deps {deps-ancient {:mvn/version "RELEASE"}}
+                        :main-opts  ["-m" "deps-ancient.deps-ancient"]}
 
-           :ancient {:extra-deps {deps-ancient {:mvn/version "RELEASE"}}
-                     :main-opts  ["-m" "deps-ancient.deps-ancient"]}
+           :style      {:extra-deps {mvxcvi/cljstyle {:git/url "https://github.com/greglook/cljstyle.git", :tag "0.12.1"}}
+                        :main-opts  ["-m" "cljstyle.main" "check"]}
 
-           :style {:extra-deps {mvxcvi/cljstyle {:git/url "https://github.com/greglook/cljstyle.git", :tag "0.12.1"}}
-                   :main-opts  ["-m" "cljstyle.main" "check"]}
+           :kaocha     {:main-opts ["-m" "kaocha.runner"
+                                    "--plugin" "cloverage"]}
 
-           :kaocha {:main-opts ["-m" "kaocha.runner"
-                                "--plugin" "cloverage"]}
+           :build      {:extra-deps {seancorfield/depstar {:mvn/version "2.0.165"}}
+                        :ns-default hf.depstar
+                        :exec-args  {:sync-pom    true
+                                     :group-id    "com.br.ianffcs"
+                                     :artifact-id "tangerina"
+                                     :version     "1.0.0"
+                                     :jar         "tangerina.jar"
+                                     :jar-type    "uber"
+                                     :aot         true
+                                     :main-class  core}
+                        :exec-fn    hf.depstar/uberjar}
 
-           :build {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
-                   :main-opts  ["-m" "hf.depstar.uberjar"
-                                "tangerina.jar"
-                                "-C"
-                                "-m"
-                                "tangerina.main.core"]}
-
-           :lint {:extra-deps {clj-kondo {:mvn/version "2020.05.10-SNAPSHOT"}}
-                  :main-opts  ["-m" "clj-kondo.main" "--lint" "src:test"]}}}
+           :lint       {:extra-deps {clj-kondo {:mvn/version "RELEASE"}}
+                        :main-opts  ["-m" "clj-kondo.main" "--lint" "src:test"]}}}

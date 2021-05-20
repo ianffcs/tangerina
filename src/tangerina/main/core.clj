@@ -7,7 +7,8 @@
    [com.walmartlabs.lacinia.pedestal2 :as lp]
    [io.pedestal.http :as http]
    [tangerina.main.datascript :as tg-ds]
-   [datascript.core :as ds]))
+   [datascript.core :as ds]
+   [shadow.cljs.devtools.api :as shadow]))
 
 (def ^:private idx-html (slurp (io/resource "public/index.html")))
 
@@ -88,9 +89,13 @@
 (defn stop-system! [sys-state]
   (stop-system @sys-state))
 
+(defn release-prod
+  [& _]
+  (shadow/release :todo-mvc))
+
 (defn -main []
   (->> {::conn                  (ds/create-conn tg-ds/schema)
         ::lacinia-pedestal-conf {:api-path "/graphql"
                                  :ide-path "/graphiql"}}
        create-system
-       #_(start-system! sys-state)))
+       (start-system! sys-state)))
